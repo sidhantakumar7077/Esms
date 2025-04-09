@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1056820666912",
+    "project_id": "esms-3170b",
+    "storage_bucket": "esms-3170b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1056820666912:android:2abd5d0082417631405245",
+        "android_client_info": {
+          "package_name": "com.esms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA11zbMpyArt4RjW8qjCCXADAjRsYuCbaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
