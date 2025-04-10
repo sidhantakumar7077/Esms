@@ -10,12 +10,14 @@ import { moderateScale, screenHeight } from '../Constants/PixelRatio';
 import database from '@react-native-firebase/database';
 import { useDispatch, useSelector } from 'react-redux';
 import UseApi from '../ApiConfig';
-import { Dropdown } from 'react-native-element-dropdown';
+// import { Dropdown } from 'react-native-element-dropdown';
 import { setVehicleDetails } from '../Redux/reducer/User';
 import { useTheme } from '@react-navigation/native';
 import moment from 'moment';
-import LinearGradient from 'react-native-linear-gradient';
+// import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const stopagesData = [
     { name: 'Brooklyn East', distance: '10 km', pickupTime: '6:00 PM' },
@@ -347,48 +349,85 @@ const TransportRoutes = () => {
                                     keyExtractor={(item) => item.id.toString()}
                                     scrollEnabled={false}
                                     renderItem={({ item, index }) => {
+                                        const isFirst = index === 0;
                                         const isLast = index === stopages.length - 1;
+                                        const pickupIndex = stopages.findIndex(
+                                            x => x.pickup_point_id === routeDetails?.route_pickup_point_id
+                                        );
+                                        const isInRoute = index >= pickupIndex;
 
-                                        const getColor = () => {
-                                            // if (isCompleted) return '#FFA726'; // purple
-                                            if (index === 0) return Colors.green2; // green
-                                            return '#C5C5C5'; // grey
-                                        };
+                                        const number = isInRoute && !isFirst && !isLast ? index - pickupIndex + 1 : null;
 
                                         return (
                                             <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 15 }}>
                                                 {/* Left Indicator */}
                                                 <View style={{ alignItems: 'center', width: 40 }}>
-                                                    {/* Number Circle */}
                                                     <View
                                                         style={{
                                                             height: 26,
                                                             width: 26,
-                                                            borderRadius: 12,
+                                                            borderRadius: 13,
                                                             borderWidth: 2,
-                                                            borderColor: getColor(),
-                                                            backgroundColor: index === 0 ? Colors.green2 : 'white',
+                                                            borderColor: isInRoute ? '#FFA726' : '#C5C5C5',
+                                                            backgroundColor: isInRoute ? '#FFA726' : '#fff',
                                                             justifyContent: 'center',
                                                             alignItems: 'center',
                                                         }}
                                                     >
-                                                        {routeDetails?.route_pickup_point_id === item.pickup_point_id ?
-                                                            <FontAwesome6 name={'person'} size={15} color={'#91062b'} />
-                                                            :
-                                                            <Text style={{ fontSize: 12, color: 'white', fontWeight: 'bold' }}>{index + 1}</Text>
-                                                        }
+                                                        {isFirst ? (
+                                                            <FontAwesome name="map-marker" size={16} color="#FFA726" />
+                                                        ) : isLast ? (
+                                                            <FontAwesome5 name="hotel" size={12} color="#fff" />
+                                                        ) : index === pickupIndex ? (
+                                                            <FontAwesome6 name="person" size={14} color="#fff" />
+                                                        ) : isInRoute ? (
+                                                            <Text style={{ fontSize: 12, color: '#fff', fontWeight: 'bold' }}>{number}</Text>
+                                                        ) : null}
                                                     </View>
 
-                                                    {/* Line below */}
-                                                    {!isLast && <View style={{ flex: 1, width: 2, backgroundColor: '#DADADA' }} />}
+                                                    {!isLast && (
+                                                        <View
+                                                            style={{
+                                                                flex: 1,
+                                                                width: 2,
+                                                                backgroundColor: index >= pickupIndex ? '#FFA726' : '#DADADA',
+                                                            }}
+                                                        />
+                                                    )}
                                                 </View>
 
                                                 {/* Right Content */}
                                                 <View style={{ flex: 1, marginLeft: 7 }}>
-                                                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: routeDetails?.route_pickup_point_id === item.pickup_point_id ? '#91062b' : '#222', textTransform: 'capitalize' }}>{item.pickup_point}</Text>
-                                                    <Text style={{ fontSize: 14, color: routeDetails?.route_pickup_point_id === item.pickup_point_id ? '#91062b' : '#333' }}>Distance:-  {item.destination_distance + " km" || 'NA'}</Text>
-                                                    <Text style={{ fontSize: 14, color: routeDetails?.route_pickup_point_id === item.pickup_point_id ? '#91062b' : '#333' }}>pickup Time:-  {moment(item.pickup_time, 'HH:mm:ss').format('hh:mm A') || 'NA'}</Text>
-                                                    {!isLast && <View style={{ width: '100%', alignSelf: 'center', height: 1.5, backgroundColor: '#EAEAEA', marginVertical: 14 }} />}
+                                                    <Text
+                                                        style={{
+                                                            fontSize: 16,
+                                                            fontWeight: 'bold',
+                                                            color:
+                                                                routeDetails?.route_pickup_point_id === item.pickup_point_id
+                                                                    ? '#91062b'
+                                                                    : '#222',
+                                                            textTransform: 'capitalize',
+                                                        }}
+                                                    >
+                                                        {item.pickup_point}
+                                                    </Text>
+                                                    <Text style={{ fontSize: 14, color: '#444' }}>
+                                                        Distance: {item.destination_distance + ' km' || 'NA'}
+                                                    </Text>
+                                                    <Text style={{ fontSize: 14, color: '#444' }}>
+                                                        Pickup Time: {moment(item.pickup_time, 'HH:mm:ss').format('hh:mm A') || 'NA'}
+                                                    </Text>
+                                                    {!isLast && (
+                                                        <View
+                                                            style={{
+                                                                width: '100%',
+                                                                alignSelf: 'center',
+                                                                height: 1.5,
+                                                                backgroundColor: '#EAEAEA',
+                                                                marginVertical: 14,
+                                                            }}
+                                                        />
+                                                    )}
                                                 </View>
                                             </View>
                                         );
