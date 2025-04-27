@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1056820666912",
-    "project_id": "esms-3170b",
-    "storage_bucket": "esms-3170b.firebasestorage.app"
+    "project_number": "408139448170",
+    "project_id": "e-sms-5d42b",
+    "storage_bucket": "e-sms-5d42b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1056820666912:android:2abd5d0082417631405245",
+        "mobilesdk_app_id": "1:408139448170:android:fd5df3d104a7cef5c8af13",
         "android_client_info": {
           "package_name": "com.esms"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA11zbMpyArt4RjW8qjCCXADAjRsYuCbaA"
+          "current_key": "AIzaSyCggJlNl9I5kqXMlXfXBI_H8CK-0eMVV0I"
         }
       ],
       "services": {

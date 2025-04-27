@@ -77,141 +77,34 @@ const Login = () => {
     }
   };
 
-  // const login = async () => {
-  //   // setLoading(true);
-  //   // let fcmToken = await AsyncStorage.getItem('fcmToken');
-  //   const token = await messaging().getToken();
-  //   console.log('Generated fcmToken......', token);
-  //   return;
-
-  //   let params = {
-  //     username: userName,
-  //     password: password,
-  //     fcm_token: token,
-  //   };
-  //   // let params = {
-  //   //   username: 'srikrishna.scriptlab@gmail.com',
-  //   //   password: 'w01bdb'
-  //   // }
-
-  //   try {
-  //     const data = await Request('login', 'POST', params);
-  //     console.log('data======================>', data.statusCode);
-
-  //     if (data?.status && data?.user_details) {
-  //       dispatch(setuser(data?.user_details));
-  //       let logindata = await AsyncStorage.getItem('authdata');
-  //       let paramsStr = JSON.stringify(params);
-  //       if (logindata != paramsStr) {
-  //         Alert.alert('', 'Want to save username and password ?', [
-  //           {text: 'No', onPress: () => console.log('cancelled'), style: 'No'},
-  //           {
-  //             text: 'Yes',
-  //             onPress: async () => {
-  //               await AsyncStorage.setItem('authdata', paramsStr);
-  //             },
-  //           },
-  //         ]);
-  //       }
-  //       NavigationService.navigate('AppStack');
-  //       Toast.show(data.message);
-  //       await AsyncStorage.setItem('fcmToken', token);
-  //     } else if (data?.message) {
-  //       Toast.show(data?.message);
-  //     }
-  //   } catch (err) {
-  //     console.log('err2....', err);
-  //     if (err.error) {
-  //       Toast.show(err.error);
-  //     }
-  //   }
-  //   // dispatch(setuser({type:'driver',id:'10'}));
-  //   // NavigationService.navigate('AppStack');
-
-  //   // if (data?.status) {
-  //   //   console.log('------------------login_page', data);
-  //   //   dispatch(setuser(data?.user_details));
-  //   //   let logindata = await AsyncStorage.getItem('authdata');
-  //   //   let paramsStr = JSON.stringify(params);
-  //   //   if (logindata != paramsStr) {
-  //   //     Alert.alert('', 'Want to save username and password ?', [
-  //   //       {text: 'No', onPress: () => console.log('cancelled'), style: 'No'},
-  //   //       {
-  //   //         text: 'Yes',
-  //   //         onPress: async () => {
-  //   //           await AsyncStorage.setItem('authdata', paramsStr);
-  //   //         },
-  //   //       },
-  //   //     ]);
-  //   //   }
-  //   //   // NavigationService.navigate('AppStack');
-  //   //   Toast.show(data.message);
-  //   //   await AsyncStorage.setItem('fcmToken', token);
-  //   // } else if (data?.message) {
-  //   //   Toast.show(data?.message);
-  //   // }
-
-  //   setLoading(false);
-  // };
-
   const login = async () => {
-    setLoading(true);
+    // setLoading(true);
+    // let fcmToken = await AsyncStorage.getItem('fcmToken');
+    const token = await messaging().getToken();
+    // console.log('Generated fcmToken......', token);
+    // return;
 
-    const token = "fB75igUMTIGb1dkroDoFFK:APA91bH4Sy7ocBIWSKck1wPn6UWV33lJDguDoX7of6mzaDGkixB7J4X_WL3sCafBXkDnNGVi5SnzPwGKCW4wF2q2AluvQC-wfhsV79wImBGRxA6tLxP32g4vz0h0laisTX_gDScq9_ZY";
-
-    const params = {
+    let params = {
       username: userName,
       password: password,
       fcm_token: token,
     };
-
-    const url = 'https://esmsv2.scriptlab.in/api/apicontroller/login';
-    const xmlRequest = new XMLHttpRequest();
+    // let params = {
+    //   username: 'srikrishna.scriptlab@gmail.com',
+    //   password: 'w01bdb'
+    // }
 
     try {
-      const response = await new Promise((resolve, reject) => {
-        xmlRequest.open('POST', url, true);
-        xmlRequest.setRequestHeader('X-API-Key', '123123');
+      const data = await Request('login', 'POST', params);
+      console.log('data======================>', data.statusCode);
 
-        const formData = new FormData();
-        for (const key in params) {
-          formData.append(key, params[key]);
-        }
-
-        xmlRequest.send(formData);
-
-        xmlRequest.onreadystatechange = () => {
-          if (xmlRequest.readyState === XMLHttpRequest.DONE) {
-            if (xmlRequest.status === 200 && xmlRequest.response) {
-              try {
-                const result = JSON.parse(xmlRequest.response);
-                resolve(result);
-              } catch (err) {
-                reject({ error: 'Invalid response format', details: err });
-              }
-            } else {
-              try {
-                const error = JSON.parse(xmlRequest.response);
-                reject(error);
-              } catch (err) {
-                reject({ error: 'Request failed', status: xmlRequest.status });
-              }
-            }
-          }
-        };
-      });
-
-      console.log('Login success:', response);
-
-      if (response?.status && response?.user_details) {
-        dispatch(setuser(response.user_details));
-
-        const logindata = await AsyncStorage.getItem('authdata');
-        const paramsStr = JSON.stringify(params);
-
-        if (logindata !== paramsStr) {
-          Alert.alert('', 'Want to save username and password?', [
-            { text: 'No', onPress: () => console.log('Cancelled'), style: 'cancel' },
+      if (data?.status && data?.user_details) {
+        dispatch(setuser(data?.user_details));
+        let logindata = await AsyncStorage.getItem('authdata');
+        let paramsStr = JSON.stringify(params);
+        if (logindata != paramsStr) {
+          Alert.alert('', 'Want to save username and password ?', [
+            {text: 'No', onPress: () => console.log('cancelled'), style: 'No'},
             {
               text: 'Yes',
               onPress: async () => {
@@ -220,21 +113,127 @@ const Login = () => {
             },
           ]);
         }
-
         NavigationService.navigate('AppStack');
-        Toast.show(response.message);
+        Toast.show(data.message);
         await AsyncStorage.setItem('fcmToken', token);
-      } else {
-        Toast.show(response.message || 'Login failed');
+      } else if (data?.message) {
+        Toast.show(data?.message);
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      Toast.show(error?.error || 'Something went wrong');
+    } catch (err) {
+      console.log('err2....', err);
+      if (err.error) {
+        Toast.show(err.error);
+      }
     }
+    // dispatch(setuser({type:'driver',id:'10'}));
+    // NavigationService.navigate('AppStack');
+
+    // if (data?.status) {
+    //   console.log('------------------login_page', data);
+    //   dispatch(setuser(data?.user_details));
+    //   let logindata = await AsyncStorage.getItem('authdata');
+    //   let paramsStr = JSON.stringify(params);
+    //   if (logindata != paramsStr) {
+    //     Alert.alert('', 'Want to save username and password ?', [
+    //       {text: 'No', onPress: () => console.log('cancelled'), style: 'No'},
+    //       {
+    //         text: 'Yes',
+    //         onPress: async () => {
+    //           await AsyncStorage.setItem('authdata', paramsStr);
+    //         },
+    //       },
+    //     ]);
+    //   }
+    //   // NavigationService.navigate('AppStack');
+    //   Toast.show(data.message);
+    //   await AsyncStorage.setItem('fcmToken', token);
+    // } else if (data?.message) {
+    //   Toast.show(data?.message);
+    // }
 
     setLoading(false);
   };
 
+  // const login = async () => {
+  //   setLoading(true);
+
+  //   const token = "fB75igUMTIGb1dkroDoFFK:APA91bH4Sy7ocBIWSKck1wPn6UWV33lJDguDoX7of6mzaDGkixB7J4X_WL3sCafBXkDnNGVi5SnzPwGKCW4wF2q2AluvQC-wfhsV79wImBGRxA6tLxP32g4vz0h0laisTX_gDScq9_ZY";
+
+  //   const params = {
+  //     username: userName,
+  //     password: password,
+  //     fcm_token: token,
+  //   };
+
+  //   const url = 'https://esmsv2.scriptlab.in/api/apicontroller/login';
+  //   const xmlRequest = new XMLHttpRequest();
+
+  //   try {
+  //     const response = await new Promise((resolve, reject) => {
+  //       xmlRequest.open('POST', url, true);
+  //       xmlRequest.setRequestHeader('X-API-Key', '123123');
+
+  //       const formData = new FormData();
+  //       for (const key in params) {
+  //         formData.append(key, params[key]);
+  //       }
+
+  //       xmlRequest.send(formData);
+
+  //       xmlRequest.onreadystatechange = () => {
+  //         if (xmlRequest.readyState === XMLHttpRequest.DONE) {
+  //           if (xmlRequest.status === 200 && xmlRequest.response) {
+  //             try {
+  //               const result = JSON.parse(xmlRequest.response);
+  //               resolve(result);
+  //             } catch (err) {
+  //               reject({ error: 'Invalid response format', details: err });
+  //             }
+  //           } else {
+  //             try {
+  //               const error = JSON.parse(xmlRequest.response);
+  //               reject(error);
+  //             } catch (err) {
+  //               reject({ error: 'Request failed', status: xmlRequest.status });
+  //             }
+  //           }
+  //         }
+  //       };
+  //     });
+
+  //     console.log('Login success:', response);
+
+  //     if (response?.status && response?.user_details) {
+  //       dispatch(setuser(response.user_details));
+
+  //       const logindata = await AsyncStorage.getItem('authdata');
+  //       const paramsStr = JSON.stringify(params);
+
+  //       if (logindata !== paramsStr) {
+  //         Alert.alert('', 'Want to save username and password?', [
+  //           { text: 'No', onPress: () => console.log('Cancelled'), style: 'cancel' },
+  //           {
+  //             text: 'Yes',
+  //             onPress: async () => {
+  //               await AsyncStorage.setItem('authdata', paramsStr);
+  //             },
+  //           },
+  //         ]);
+  //       }
+
+  //       NavigationService.navigate('AppStack');
+  //       Toast.show(response.message);
+  //       await AsyncStorage.setItem('fcmToken', token);
+  //     } else {
+  //       Toast.show(response.message || 'Login failed');
+  //     }
+  //   } catch (error) {
+  //     console.error('Login error:', error);
+  //     Toast.show(error?.error || 'Something went wrong');
+  //   }
+
+  //   setLoading(false);
+  // };
 
   return (
     <ImageBackground
