@@ -1,13 +1,8 @@
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native'
-import React, { useState } from 'react'
-import NavigationService from '../../Services/Navigation';
-import BackHeader from '../../Components/BackHeader';
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import { Colors } from '../../Constants/Colors';
 import { TextStyles, appStyles } from '../../Constants/Fonts';
-import { Images } from '../../Constants/Images';
-import { moderateScale } from '../../Constants/PixelRatio';
-import TitleHeader from '../../Components/TitleHeader';
-import { useTheme } from '@react-navigation/native';
+import { useNavigation, useTheme, useIsFocused } from '@react-navigation/native';
 import UseApi from '../../ApiConfig';
 import { useSelector } from 'react-redux';
 
@@ -20,15 +15,21 @@ const SubResults = [
     { subject: 'Mathematics (213)', minMarks: '30', marksObtained: '92/100', result: 'Pass', note: '' },
 ];
 
-const ExamResult = ({route}) => {
-    const {examId,item} = route?.params || {}
-    const {colors} = useTheme();
+const ExamResult = ({ route }) => {
+
+    const navigation = useNavigation();
+    const isFocused = useIsFocused();
+    const { examId, item } = route?.params || {}
+    const { colors } = useTheme();
     const { Request } = UseApi();
     const { userData } = useSelector(state => state.User);
     // const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState([]);
-
+    const [examResults, setExamResults] = useState([]);
+    const [examKeys, setExamKeys] = useState([]);
+    const [cresult, setCresult] = useState([]);
+    const [consolidate, setConsolidate] = useState('0');
 
     // useEffect(() => {
     //     getExamResult();
@@ -55,97 +56,230 @@ const ExamResult = ({route}) => {
     //     setLoading(false);
     // }
 
+    const getExamSchedule = async () => {
+        setLoading(true);
+        const formBody = new URLSearchParams({
+            student_session_id: userData?.student_session_id,
+            type: 3,
+            exam_group_class_batch_exam_id: examId,
+        }).toString();
+
+        try {
+            const response = await fetch('https://esmsv2.scriptlab.in/api/apicontroller/exam-schedule', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-API-Key': '123123'
+                },
+                body: formBody,
+            });
+
+            const result = await response.json();
+            console.log('Exam Schedule Response:', result);
+
+            if (result.status === true) {
+                setLoading(false);
+                setExamResults(result.data.Exam);
+                setCresult(result.data.cresult);
+                setConsolidate(result.data.consolidate);
+
+                const keys = result.data.Exam.map(exam => `exam_${exam.exam_group_class_batch_exam_id}`);
+                setExamKeys(keys); // 👈 store in state
+                // console.log('Exam Keys:', keys);
+            } else {
+                setLoading(false);
+                console.warn('Request failed:', result.message);
+            }
+        } catch (error) {
+            setLoading(false);
+            console.error('API Error:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (isFocused) {
+            getExamSchedule();
+            // console.log("Prop", route?.params);
+        }
+    }, [isFocused]);
+
     return (
         <View>
-            <BackHeader
-                title='Exam Result'
-                onBackIconPress={() => {
-                    NavigationService.navigate('Examination');
-                }}
-            />
-            <ScrollView style={{
-                backgroundColor: colors.background,
-                width: '100%',
-            }}>
+            {loading ?
+                <ActivityIndicator size={28} style={{ marginTop: '25%' }} />
+                :
+                <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, width: '100%' }}>
+                    <View style={{ ...appStyles.main, width: '94%', backgroundColor: colors.background }}>
+                        {examResults?.map((examItem, index) => (
+                            <View key={index} style={{ ...appStyles.card, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5, marginBottom: 20 }}>
+                                {/* Header */}
+                                <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
+                                    <Text style={{ ...TextStyles.title3, color: colors.text }}>
+                                        {examItem.exam_name.toUpperCase()}
+                                    </Text>
+                                </View>
 
-                <View style={{ ...appStyles.main, width: '94%',backgroundColor:colors.background }}>
-                    <TitleHeader
-                        title={'Your Exam Result is here'}
-                        image={Images.examresult}
-                    />
+                                {/* Table Header */}
+                                <View style={{ padding: 10 }}>
+                                    <View style={{ flexDirection: 'row' }}>
+                                        <View style={{ flex: 1.2 }}>
+                                            <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Subject</Text>
+                                        </View>
+                                        <View style={{ flex: 1, alignItems: 'center' }}>
+                                            <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Max Marks</Text>
+                                        </View>
+                                        <View style={{ flex: 0.8, alignItems: 'center' }}>
+                                            <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Min Marks</Text>
+                                        </View>
+                                        <View style={{ flex: 1.2, alignItems: 'center' }}>
+                                            <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Marks Obtained</Text>
+                                        </View>
+                                        <View style={{ flex: 0.8, alignItems: 'center' }}>
+                                            <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Grade</Text>
+                                        </View>
+                                    </View>
 
-                    <View style={{ ...appStyles.card,backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5  }}>
-                        <View style={{...appStyles.titleRow, backgroundColor: colors.lightGreen}}>
-                            <Text style={{...TextStyles.title3,color:colors.text}}>MONTHLY TEST APRIL(2023-24)</Text>
-                        </View>
-                        <View style={{ padding: 10 }}>
-                            <View style={{ flexDirection: 'row' }}>
-                                {/* <Text style={{ ...TextStyles.subTitle, flex: 1.2 }}>Subject</Text>
-                                <Text style={{ ...TextStyles.subTitle, flex: 0.8 }}>Min Marks</Text>
-                                <Text style={{ ...TextStyles.subTitle, flex: 1.2 }}>Marks Obtained</Text>
-                                <Text style={{ ...TextStyles.subTitle, flex: 1 }}>Result</Text>
-                                <Text style={{ ...TextStyles.subTitle, flex: 1 }}>Note</Text> */}
+                                    {/* Table Rows */}
+                                    <View style={{ marginTop: 5 }}>
+                                        {examItem.values.map((item, subIndex) => (
+                                            <View key={subIndex} style={{ flexDirection: 'row', marginTop: 10 }}>
+                                                <View style={{ flex: 1.2 }}>
+                                                    <Text style={{ ...TextStyles.keyText, color: colors.text }}>{item.subject}</Text>
+                                                </View>
+                                                <View style={{ flex: 1, alignItems: 'center' }}>
+                                                    <Text style={{ ...TextStyles.keyText, color: colors.text }}>{item.max_marks}</Text>
+                                                </View>
+                                                <View style={{ flex: 0.8, alignItems: 'center' }}>
+                                                    <Text style={{ ...TextStyles.keyText, color: colors.text }}>{item.min_marks}</Text>
+                                                </View>
+                                                <View style={{ flex: 1.2, alignItems: 'center' }}>
+                                                    <Text style={{ ...TextStyles.keyText, color: colors.text }}>{item.marks_obtained}</Text>
+                                                </View>
+                                                <View style={{ flex: 0.8, alignItems: 'center' }}>
+                                                    <Text style={{ ...TextStyles.keyText, color: item.grade === 'F' ? Colors.red1 : Colors.green2 }}>
+                                                        {item.grade}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        ))}
+                                    </View>
 
-                                <View style={{ flex: 1.2 }}>
-                                    <Text style={{...TextStyles.subTitle,color:colors.text}}>Subject</Text>
-                                </View>
-                                <View style={{ flex: 0.8, alignItems: 'center' }}>
-                                    <Text style={{...TextStyles.subTitle,color:colors.text}}>  Min Marks</Text>
-                                </View>
-                                <View style={{ flex: 1.2, alignItems: 'center' }}>
-                                    <Text style={{...TextStyles.subTitle,color:colors.text}}>  Marks Obtained</Text>
-                                </View>
-                                <View style={{ flex: 1, alignItems: 'center' }}>
-                                    <Text style={{...TextStyles.subTitle,color:colors.text}}>Result</Text>
-                                </View>
-                                <View style={{ flex: 1, alignItems: 'center' }}>
-                                    <Text style={{...TextStyles.subTitle,color:colors.text}}>Note</Text>
-                                </View>
-                            </View>
-                            <View style={{ marginTop: 5 }}>
-                                {SubResults.map((item, index) => {
-                                    return (
-                                        <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                            <View style={{ flex: 1.2 }}>
-                                                <Text style={{ ...TextStyles.keyText,color:colors.text }}>{item.subject}</Text>
-                                            </View>
-                                            <View style={{ flex: 0.8, alignItems: 'center' }}>
-                                                <Text style={{ ...TextStyles.keyText,color:colors.text }}>{item.minMarks}</Text>
-                                            </View>
-                                            <View style={{ flex: 1.2, alignItems: 'center' }}>
-                                                <Text style={{ ...TextStyles.keyText,color:colors.text }}>{item.marksObtained}</Text>
-                                            </View>
-                                            <View style={{ flex: 1, alignItems: 'center' }}>
-                                                <Text style={{ ...TextStyles.keyText, color: item.result == 'Pass' ? Colors.green2 : Colors.red1 }}>{item.result}</Text>
-                                            </View>
-                                            <View style={{ flex: 1, alignItems: 'center' }}>
-                                                <Text style={{ ...TextStyles.keyText,color:colors.text }}>{item.note}</Text>
+                                    {/* Footer */}
+                                    <View style={{
+                                        backgroundColor: '#f1f1f1',
+                                        paddingVertical: 12,
+                                        paddingHorizontal: 10,
+                                        borderRadius: 6,
+                                        marginTop: 15,
+                                    }}>
+                                        <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
+                                            <Text style={{ fontWeight: '600' }}>Percentage:</Text> {examItem.footer?.Percentage || '-'}
+                                        </Text>
+
+                                        <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
+                                            <Text style={{ fontWeight: '600' }}>Rank:</Text> {examItem.footer?.Rank || '-'}
+                                        </Text>
+
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                                            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>Result:</Text>
+                                            <View style={{
+                                                backgroundColor: examItem.footer?.Result === 'Pass' ? Colors.green2 : Colors.red1,
+                                                paddingHorizontal: 8,
+                                                paddingVertical: 2,
+                                                borderRadius: 4,
+                                                marginLeft: 8,
+                                            }}>
+                                                <Text style={{ color: '#fff', fontSize: 13 }}>{examItem.footer?.Result || '-'}</Text>
                                             </View>
                                         </View>
-                                    )
-                                })}
-                            </View>
-                        </View>
-                        <View style={styles.bottomRow}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{...TextStyles.keyText,color:colors.text}}>Grand Total  344/400</Text>
-                                <Text style={{...TextStyles.keyText,color:colors.text}}>Division  FIRST</Text>
-                                <Text style={{...TextStyles.keyText,color:colors.text}}>Rank  3</Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{...TextStyles.keyText,flex:null,color:colors.text}}>Percentage  86.00</Text>
-                                <View style={{ flexDirection: 'row',marginTop:5 }}>
-                                    <Text style={{ ...TextStyles.keyText, flex: null,marginTop:0,color:colors.text }}>Result</Text>
-                                    <View style={styles.statusWraper}>
-                                        <Text style={{ ...TextStyles.keyText, color: Colors.white2, marginTop: 0 }}>PASS</Text>
+
+                                        <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
+                                            <Text style={{ fontWeight: '600' }}>Division:</Text> {examItem.footer?.Division || '-'}
+                                        </Text>
+
+                                        <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
+                                            <Text style={{ fontWeight: '600' }}>Grand Total:</Text> {examItem.footer?.['Grand Total'] || '-'}
+                                        </Text>
+
+                                        <Text style={{ fontSize: 14, color: colors.text }}>
+                                            <Text style={{ fontWeight: '600' }}>Total Obtain Marks:</Text> {examItem.footer?.['Total Obtain Marks'] || '-'}
+                                        </Text>
                                     </View>
                                 </View>
                             </View>
-                        </View>
-                    </View>
-                </View>
+                        ))}
 
-            </ScrollView>
+                        <View style={{ ...appStyles.card, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                            {/* Header */}
+                            <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
+                                <Text style={{ ...TextStyles.title3, color: colors.text }}>CONSOLIDATED RESULT</Text>
+                            </View>
+
+                            {/* Table Header */}
+                            <View style={{ flexDirection: 'row', padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc', backgroundColor: '#f1f1f1' }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Exam</Text>
+                                </View>
+                                {examKeys.map((key, idx) => {
+                                    const label = cresult.find(e => e.exam_key === key)?.exam_label || '-';
+                                    return (
+                                        <View key={idx} style={{ flex: 1, alignItems: 'center' }}>
+                                            <Text style={{ ...TextStyles.subTitle, color: colors.text }}>{label}</Text>
+                                        </View>
+                                    );
+                                })}
+                                <View style={{ flex: 1, alignItems: 'center' }}>
+                                    <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Consolidate</Text>
+                                </View>
+                            </View>
+
+                            {/* Table Body */}
+                            <View style={{ flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ ...TextStyles.keyText, color: colors.text }}>Marks Obtained</Text>
+                                </View>
+                                {examKeys.map((key, idx) => {
+                                    const mark = cresult.find(e => e.exam_key === key)?.marks_value || '-';
+                                    return (
+                                        <View key={idx} style={{ flex: 1, alignItems: 'center' }}>
+                                            <Text style={{ ...TextStyles.keyText, color: colors.text }}>{mark}</Text>
+                                        </View>
+                                    );
+                                })}
+                                <View style={{ flex: 1, alignItems: 'center' }}>
+                                    <Text style={{ ...TextStyles.keyText, color: colors.text }}>{consolidate}</Text>
+                                </View>
+                            </View>
+
+                            {/* Footer */}
+                            <View style={{
+                                flexDirection: 'row',
+                                backgroundColor: '#f1f1f1',
+                                paddingVertical: 10,
+                                paddingHorizontal: 10,
+                                marginTop: 2,
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Result:</Text>
+                                    <View style={{
+                                        backgroundColor: Colors.green2,
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 2,
+                                        borderRadius: 4,
+                                        marginLeft: 8
+                                    }}>
+                                        <Text style={{ color: '#fff', fontSize: 13 }}>Pass</Text>
+                                    </View>
+                                </View>
+                                <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Division:</Text>
+                            </View>
+                        </View>
+
+                    </View>
+                </ScrollView>
+            }
         </View>
     )
 }
@@ -169,7 +303,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
         paddingVertical: 1,
         justifyContent: 'center',
-        borderRadius:3
+        borderRadius: 3
     }
 
 })

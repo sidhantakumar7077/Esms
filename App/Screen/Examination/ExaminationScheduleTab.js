@@ -1,20 +1,13 @@
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import BackHeader from '../../Components/BackHeader';
 import NavigationService from '../../Services/Navigation';
 import { TextStyles, appStyles } from '../../Constants/Fonts';
 import { Images } from '../../Constants/Images';
 import { moderateScale, screenHeight } from '../../Constants/PixelRatio';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Colors } from '../../Constants/Colors';
-import TitleHeader from '../../Components/TitleHeader';
 import UseApi from '../../ApiConfig';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@react-navigation/native';
-import ExaminationScheduleTab from './ExaminationScheduleTab';
-import ExamResult from './ExamResult';
-
-const Tab = createMaterialTopTabNavigator();
 
 const ExamsData = [
     { name: 'Monthly Examination-(Chapter Wise) Last Week', instruction: 'You are allowed to submit only once, make sure that you are correctly attempted all the questions before submission.' },
@@ -25,13 +18,13 @@ const ExamsData = [
     { name: 'Monthly Test April(2023-24)', instruction: 'You are allowed to submit only once, make sure that you are correctly attempted all the questions before submission.' },
 ];
 
-const Examination = () => {
+const ExaminationScheduleTab = () => {
     const { Request } = UseApi();
     const { userData } = useSelector(state => state.User);
     // const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     const [exams, setExams] = useState([]);
-    const { colors } = useTheme();
+    const {colors} = useTheme();
 
 
     useEffect(() => {
@@ -61,62 +54,54 @@ const Examination = () => {
 
     return (
         <View>
-            <BackHeader
-                title='Examinations'
-                onBackIconPress={() => {
-                    NavigationService.navigate('Home');
-                }}
-            />
-            <View style={{ backgroundColor: colors.background, width: '100%' }}>
-                <View style={{ ...appStyles.main, backgroundColor: colors.background }}>
-                    <TitleHeader
-                        title={'Your Examinations are here!'}
-                        image={Images.examinations}
-                    />
-
-                    <View
-                        style={{
-                            minHeight: 600,
-                            borderRadius: 15,
-                            borderWidth: 0.5,
-                            borderColor: colors.lightBlck,
-                        }}>
-                        <Tab.Navigator
-                            screenOptions={{
-                                tabBarLabelStyle: {
-                                    fontSize: moderateScale(13),
-                                    fontWeight: '500',
-                                    textTransform: 'none',
-                                    borderRadius: 15,
-                                },
-                                tabBarPressColor: 'transparent',
-                                tabBarStyle: {
-                                    backgroundColor: colors.lightGreen,
-                                    borderTopLeftRadius: 15,
-                                    borderTopEndRadius: 15,
-                                },
-                                tabBarContentContainerStyle: {
-                                    borderBottomEndRadius: 15,
-                                },
-                                // tabBarGap: 5,
-                                // tabBarActiveTintColor: Colors.tangerine,
-                                tabBarInactiveTintColor: colors.greyText,
-                                tabBarIndicatorStyle: { backgroundColor: colors.text },
-                                // animationEnabled:false,
-                                // tabBarScrollEnabled:true
-                            }}>
-                            <Tab.Screen name={'EXAM SCHEDULE'} component={ExaminationScheduleTab} />
-                            <Tab.Screen name={'EXAM RESULT'} component={ExamResult} />
-                        </Tab.Navigator>
+            <ScrollView showsVerticalScrollIndicator={false} style={{
+                backgroundColor: colors.background,
+                width: '100%',
+            }}>
+                <View style={{...appStyles.main,backgroundColor:colors.background}}>
+                    <View style={{ marginTop: 20 }}>
+                        {exams.map((item, index) => {
+                            return (
+                                <View style={{ ...appStyles.card,backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                                    <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
+                                        <Text numberOfLines={2} style={{...TextStyles.title2,color:colors.text}}>{item.exam}</Text>
+                                    </View>
+                                    <View style={{ padding: 15, paddingTop: 5 }}>
+                                        <Text style={{...TextStyles.keyText2,color:colors.text}}>{item.description}</Text>
+                                        <View style={styles.btnRow}>
+                                            <TouchableOpacity
+                                                onPress={() => NavigationService.navigate('ExamSchedule',{examId:item.exam_group_class_batch_exam_id})}
+                                                style={{ ...styles.btn, backgroundColor: Colors.btnBlackBackground }}>
+                                                <Text style={{...appStyles.btnText2}}>Exam Schedule</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
+                            )
+                        })}
                     </View>
+                    {loading && <ActivityIndicator size={28} style={{ marginTop: screenHeight / 3 }} />}
+                    {exams.length == 0 && !loading && <View style={{ marginTop: screenHeight / 4, alignItems: 'center' }}>
+                        <Image
+                            source={Images.NoDataFound}
+                            style={{
+                                height: moderateScale(60),
+                                width: moderateScale(60),
+                                opacity: 0.5,
+                                tintColor:colors.text
+                                // marginTop:-15
+                            }}
+                        />
+                        <Text style={{ fontSize: moderateScale(14), marginTop: 10,color:colors.text }}>No records found!</Text>
+                    </View>}
                 </View>
 
-            </View>
+            </ScrollView>
         </View>
     )
 }
 
-export default Examination
+export default ExaminationScheduleTab
 
 const styles = StyleSheet.create({
     btn: {
