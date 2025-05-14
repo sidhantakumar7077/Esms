@@ -79,11 +79,11 @@ const ExamResult = ({ route }) => {
 
             if (result.status === true) {
                 setLoading(false);
-                setExamResults(result.data.Exam);
+                setExamResults(result.data.exam);
                 setCresult(result.data.cresult);
                 setConsolidate(result.data.consolidate);
 
-                const keys = result.data.Exam.map(exam => `exam_${exam.exam_group_class_batch_exam_id}`);
+                const keys = result.data.exam.map(exam => `exam_${exam.exam_group_class_batch_exam_id}`);
                 setExamKeys(keys); // 👈 store in state
                 // console.log('Exam Keys:', keys);
             } else {
@@ -173,36 +173,36 @@ const ExamResult = ({ route }) => {
                                         marginTop: 15,
                                     }}>
                                         <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
-                                            <Text style={{ fontWeight: '600' }}>Percentage:</Text> {examItem.footer?.Percentage || '-'}
+                                            <Text style={{ fontWeight: '600' }}>Percentage:</Text> {examItem.footer?.percentage || '-'}
                                         </Text>
 
                                         <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
-                                            <Text style={{ fontWeight: '600' }}>Rank:</Text> {examItem.footer?.Rank || '-'}
+                                            <Text style={{ fontWeight: '600' }}>Rank:</Text> {examItem.footer?.rank || '-'}
                                         </Text>
 
                                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                                             <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>Result:</Text>
                                             <View style={{
-                                                backgroundColor: examItem.footer?.Result === 'Pass' ? Colors.green2 : Colors.red1,
+                                                backgroundColor: examItem.footer?.result === 'Pass' ? Colors.green2 : Colors.red1,
                                                 paddingHorizontal: 8,
                                                 paddingVertical: 2,
                                                 borderRadius: 4,
                                                 marginLeft: 8,
                                             }}>
-                                                <Text style={{ color: '#fff', fontSize: 13 }}>{examItem.footer?.Result || '-'}</Text>
+                                                <Text style={{ color: '#fff', fontSize: 13 }}>{examItem.footer?.result || '-'}</Text>
                                             </View>
                                         </View>
 
                                         <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
-                                            <Text style={{ fontWeight: '600' }}>Division:</Text> {examItem.footer?.Division || '-'}
+                                            <Text style={{ fontWeight: '600' }}>Division:</Text> {examItem.footer?.division || '-'}
                                         </Text>
 
                                         <Text style={{ fontSize: 14, color: colors.text, marginBottom: 4 }}>
-                                            <Text style={{ fontWeight: '600' }}>Grand Total:</Text> {examItem.footer?.['Grand Total'] || '-'}
+                                            <Text style={{ fontWeight: '600' }}>Grand Total:</Text> {examItem.footer?.['grand_total'] || '-'}
                                         </Text>
 
                                         <Text style={{ fontSize: 14, color: colors.text }}>
-                                            <Text style={{ fontWeight: '600' }}>Total Obtain Marks:</Text> {examItem.footer?.['Total Obtain Marks'] || '-'}
+                                            <Text style={{ fontWeight: '600' }}>Total Obtain Marks:</Text> {examItem.footer?.['total_obtain_marks'] || '-'}
                                         </Text>
                                     </View>
                                 </View>
