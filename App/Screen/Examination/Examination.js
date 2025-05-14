@@ -73,10 +73,11 @@ const Examination = () => {
                         title={'Your Examinations are here!'}
                         image={Images.examinations}
                     />
-
+        
                     <View
                         style={{
-                            minHeight: 600,
+                            height: '100%',
+                            flex: 1,
                             borderRadius: 15,
                             borderWidth: 0.5,
                             borderColor: colors.lightBlck,

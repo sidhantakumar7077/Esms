@@ -24,7 +24,8 @@ const ExaminationScheduleTab = () => {
     // const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     const [exams, setExams] = useState([]);
-    const {colors} = useTheme();
+    const { colors } = useTheme();
+    const maxWidth = 750;
 
 
     useEffect(() => {
@@ -58,21 +59,21 @@ const ExaminationScheduleTab = () => {
                 backgroundColor: colors.background,
                 width: '100%',
             }}>
-                <View style={{...appStyles.main,backgroundColor:colors.background}}>
-                    <View style={{ marginTop: 20 }}>
+                <View style={{ backgroundColor: colors.background, width: '94%', alignSelf: 'center', maxWidth: maxWidth, paddingBottom: 5 }}>
+                    <View style={{ marginTop: 10 }}>
                         {exams.map((item, index) => {
                             return (
-                                <View style={{ ...appStyles.card,backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                                <View style={{ ...appStyles.card, backgroundColor: colors.background }}>
                                     <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
-                                        <Text numberOfLines={2} style={{...TextStyles.title2,color:colors.text}}>{item.exam}</Text>
+                                        <Text numberOfLines={2} style={{ ...TextStyles.title2, color: colors.text }}>{item.exam}</Text>
                                     </View>
                                     <View style={{ padding: 15, paddingTop: 5 }}>
-                                        <Text style={{...TextStyles.keyText2,color:colors.text}}>{item.description}</Text>
+                                        <Text style={{ ...TextStyles.keyText2, color: colors.text }}>{item.description}</Text>
                                         <View style={styles.btnRow}>
                                             <TouchableOpacity
-                                                onPress={() => NavigationService.navigate('ExamSchedule',{examId:item.exam_group_class_batch_exam_id})}
+                                                onPress={() => NavigationService.navigate('ExamSchedule', { examId: item.exam_group_class_batch_exam_id })}
                                                 style={{ ...styles.btn, backgroundColor: Colors.btnBlackBackground }}>
-                                                <Text style={{...appStyles.btnText2}}>Exam Schedule</Text>
+                                                <Text style={{ ...appStyles.btnText2 }}>Exam Schedule</Text>
                                             </TouchableOpacity>
                                         </View>
                                     </View>
@@ -88,11 +89,11 @@ const ExaminationScheduleTab = () => {
                                 height: moderateScale(60),
                                 width: moderateScale(60),
                                 opacity: 0.5,
-                                tintColor:colors.text
+                                tintColor: colors.text
                                 // marginTop:-15
                             }}
                         />
-                        <Text style={{ fontSize: moderateScale(14), marginTop: 10,color:colors.text }}>No records found!</Text>
+                        <Text style={{ fontSize: moderateScale(14), marginTop: 10, color: colors.text }}>No records found!</Text>
                     </View>}
                 </View>
 

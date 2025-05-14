@@ -17,6 +17,7 @@ const SubResults = [
 
 const ExamResult = ({ route }) => {
 
+    const maxWidth = 750;
     const navigation = useNavigation();
     const isFocused = useIsFocused();
     const { examId, item } = route?.params || {}
@@ -109,9 +110,9 @@ const ExamResult = ({ route }) => {
                 <ActivityIndicator size={28} style={{ marginTop: '25%' }} />
                 :
                 <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, width: '100%' }}>
-                    <View style={{ ...appStyles.main, width: '94%', backgroundColor: colors.background }}>
+                    <View style={{ width: '94%', backgroundColor: colors.background, alignSelf: 'center', maxWidth: maxWidth }}>
                         {examResults?.map((examItem, index) => (
-                            <View key={index} style={{ ...appStyles.card, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5, marginBottom: 20 }}>
+                            <View key={index} style={{ ...appStyles.card, backgroundColor: colors.background, marginBottom: 20 }}>
                                 {/* Header */}
                                 <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
                                     <Text style={{ ...TextStyles.title3, color: colors.text }}>
@@ -209,7 +210,7 @@ const ExamResult = ({ route }) => {
                             </View>
                         ))}
 
-                        <View style={{ ...appStyles.card, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                        <View style={{ ...appStyles.card, backgroundColor: colors.background, marginBottom: 20 }}>
                             {/* Header */}
                             <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
                                 <Text style={{ ...TextStyles.title3, color: colors.text }}>CONSOLIDATED RESULT</Text>
