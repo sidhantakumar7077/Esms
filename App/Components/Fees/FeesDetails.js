@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -16,7 +17,7 @@ import {
 } from '../../Constants/PixelRatio';
 import UseApi from '../../ApiConfig';
 import { useSelector } from 'react-redux';
-import {  useTheme } from '@react-navigation/native';
+import { useTheme } from '@react-navigation/native';
 
 const FeesDetails = () => {
 
@@ -44,7 +45,7 @@ const FeesDetails = () => {
     } catch (err) {
       console.log('Error fetching fees:', err);
     }
-    
+
     setLoading(false);
   };
 
@@ -63,8 +64,9 @@ const FeesDetails = () => {
             { label: 'Amount', value: `\u20B9${item.amount}` },
             { label: 'Fine', value: `\u20B9${item.fine_amount}` },
             { label: 'Discount', value: `\u20B9${item.discount_amount}` },
-            { label: 'Paid Amt', value: `\u20B9${item.paid_amount}` },
-            { label: 'Balance Amt', value: item.payment_amount ? `\u20B9${item.payment_amount}` : 'NA' },
+            { label: 'Partial', value: `\u20B9${item.paid_amount}` },
+            { label: 'Payment Mode', value: item.payment_mode || 'NA' },
+            { label: 'Balance Amt', value: item.due_amount ? `\u20B9${item.due_amount}` : 'NA' },
           ].map((data, index) => (
             <View key={index} style={styles.row}>
               <Text style={{ ...styles.keyText, color: colors.text }}>{data.label}</Text>
@@ -75,10 +77,17 @@ const FeesDetails = () => {
         <View style={{ alignItems: 'flex-end' }}>
           <View style={{
             ...styles.paidType,
-            backgroundColor: item.status === 'unpaid' ? Colors.red1 : Colors.Green1,
+            backgroundColor:
+              item.status.toLowerCase() === 'unpaid'
+                ? Colors.red1
+                : item.status.toLowerCase() === 'paid'
+                  ? Colors.Green1
+                  : item.status.toLowerCase() === 'partial'
+                    ? Colors.orange
+                    : Colors.lightGrey2,
           }}>
             <Text style={{ ...TextStyles.title2, color: Colors.white2 }}>
-              {item.status === 'unpaid' ? 'Unpaid' : 'Paid'}
+              {item.status}
             </Text>
           </View>
         </View>
@@ -91,42 +100,44 @@ const FeesDetails = () => {
       {loading ? (
         <ActivityIndicator size={28} style={{ marginTop: screenHeight / 3 }} />
       ) : (
-        <>
-        <FlatList
-          data={studentDueFees}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={{ padding: moderateScale(5) }}
-          ListHeaderComponent={() => (
-            <Text style={styles.headerText}>Student Fees Details</Text>
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.noDataContainer}>
-              <Image source={Images.NoDataFound} style={styles.noDataImage} />
-              <Text style={styles.noDataText}>No records found!</Text>
-            </View>
-          )}
-        />
-        <FlatList
-          data={transportFees}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={{ padding: moderateScale(5) }}
-          ListHeaderComponent={() => (
-            <Text style={{...TextStyles.title2,...styles.headerText}}>Transport Fees Details</Text>
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.noDataContainer}>
-              <Image source={Images.NoDataFound} style={styles.noDataImage} />
-              <Text style={styles.noDataText}>No records found!</Text>
-            </View>
-          )}
-        />
-       
-         </>
+        <ScrollView>
+          <FlatList
+            scrollEnabled={false}
+            data={studentDueFees}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+            contentContainerStyle={{ padding: moderateScale(5) }}
+            ListHeaderComponent={() => (
+              <Text style={styles.headerText}>Student Fees Details</Text>
+            )}
+            ListEmptyComponent={() => (
+              <View style={styles.noDataContainer}>
+                <Image source={Images.NoDataFound} style={styles.noDataImage} />
+                <Text style={styles.noDataText}>No records found!</Text>
+              </View>
+            )}
+          />
+          <FlatList
+            scrollEnabled={false}
+            data={transportFees}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+            contentContainerStyle={{ padding: moderateScale(5) }}
+            ListHeaderComponent={() => (
+              <Text style={{ ...TextStyles.title2, ...styles.headerText }}>Transport Fees Details</Text>
+            )}
+            ListEmptyComponent={() => (
+              <View style={styles.noDataContainer}>
+                <Image source={Images.NoDataFound} style={styles.noDataImage} />
+                <Text style={styles.noDataText}>No records found!</Text>
+              </View>
+            )}
+          />
+
+        </ScrollView>
       )}
 
-     
+
     </View>
   );
 };
@@ -173,7 +184,7 @@ const styles = StyleSheet.create({
     height: moderateScale(60),
     width: moderateScale(60),
     opacity: 0.5,
-    marginTop:10
+    marginTop: 10
   },
   noDataText: {
     fontSize: moderateScale(14),

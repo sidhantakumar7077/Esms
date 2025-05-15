@@ -31,6 +31,8 @@ const ExamResult = ({ route }) => {
     const [examKeys, setExamKeys] = useState([]);
     const [cresult, setCresult] = useState([]);
     const [consolidate, setConsolidate] = useState('0');
+    const [consolidateResult, setConsolidateResult] = useState("");
+    const [consolidateDivision, setConsolidateDivision] = useState("");
 
     // useEffect(() => {
     //     getExamResult();
@@ -83,6 +85,8 @@ const ExamResult = ({ route }) => {
                 setExamResults(result.data.exam);
                 setCresult(result.data.cresult);
                 setConsolidate(result.data.consolidate);
+                setConsolidateResult(result.data.consolidate_result);
+                setConsolidateDivision(result.data.consolidate_division);
 
                 const keys = result.data.exam.map(exam => `exam_${exam.exam_group_class_batch_exam_id}`);
                 setExamKeys(keys); // 👈 store in state
@@ -265,16 +269,16 @@ const ExamResult = ({ route }) => {
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Result:</Text>
                                     <View style={{
-                                        backgroundColor: Colors.green2,
+                                        backgroundColor: consolidateResult === 'Pass' ? Colors.green2 : Colors.red1,
                                         paddingHorizontal: 8,
                                         paddingVertical: 2,
                                         borderRadius: 4,
                                         marginLeft: 8
                                     }}>
-                                        <Text style={{ color: '#fff', fontSize: 13 }}>Pass</Text>
+                                        <Text style={{ color: '#fff', fontSize: 13 }}>{consolidateResult}</Text>
                                     </View>
                                 </View>
-                                <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Division:</Text>
+                                <Text style={{ ...TextStyles.subTitle, color: colors.text }}>Division: {consolidateDivision}</Text>
                             </View>
                         </View>
 

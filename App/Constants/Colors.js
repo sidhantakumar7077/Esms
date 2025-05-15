@@ -20,6 +20,7 @@
     blue:'#474ff1',
     red1:'#E9684B',
     // red2:'#fb483a',
+    orange: '#FFA500',
     inputBackground:'#fef8f5',
     btnText:'#fcfcff',
     btnBlackBackground:'#3f3f3f',
