@@ -73,7 +73,7 @@ const Examination = () => {
                         title={'Your Examinations are here!'}
                         image={Images.examinations}
                     />
-        
+
                     <View
                         style={{
                             height: '100%',
@@ -83,6 +83,9 @@ const Examination = () => {
                             borderColor: colors.lightBlck,
                         }}>
                         <Tab.Navigator
+                            style={{
+                                borderRadius: 20
+                            }}
                             screenOptions={{
                                 tabBarLabelStyle: {
                                     fontSize: moderateScale(13),
@@ -99,12 +102,8 @@ const Examination = () => {
                                 tabBarContentContainerStyle: {
                                     borderBottomEndRadius: 15,
                                 },
-                                // tabBarGap: 5,
-                                // tabBarActiveTintColor: Colors.tangerine,
                                 tabBarInactiveTintColor: colors.greyText,
                                 tabBarIndicatorStyle: { backgroundColor: colors.text },
-                                // animationEnabled:false,
-                                // tabBarScrollEnabled:true
                             }}>
                             <Tab.Screen name={'EXAM SCHEDULE'} component={ExaminationScheduleTab} />
                             <Tab.Screen name={'EXAM RESULT'} component={ExamResult} />

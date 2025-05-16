@@ -41,6 +41,7 @@ const FeesDetails = () => {
       if (data.status && data?.data) {
         setTransportFees(data.data?.tranport_fee);
         setStudentDueFees(data.data?.student_due_fee);
+        console.log("tranport_fee", data.data?.tranport_fee);
       }
     } catch (err) {
       console.log('Error fetching fees:', err);
@@ -117,23 +118,24 @@ const FeesDetails = () => {
               </View>
             )}
           />
-          <FlatList
-            scrollEnabled={false}
-            data={transportFees}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderItem}
-            contentContainerStyle={{ padding: moderateScale(5) }}
-            ListHeaderComponent={() => (
-              <Text style={{ ...TextStyles.title2, ...styles.headerText }}>Transport Fees Details</Text>
-            )}
-            ListEmptyComponent={() => (
-              <View style={styles.noDataContainer}>
-                <Image source={Images.NoDataFound} style={styles.noDataImage} />
-                <Text style={styles.noDataText}>No records found!</Text>
-              </View>
-            )}
-          />
-
+          {Array.isArray(transportFees) && transportFees.length > 0 &&
+            <FlatList
+              scrollEnabled={false}
+              data={transportFees}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={renderItem}
+              contentContainerStyle={{ padding: moderateScale(5) }}
+              ListHeaderComponent={() => (
+                <Text style={{ ...TextStyles.title2, ...styles.headerText }}>Transport Fees Details</Text>
+              )}
+              ListEmptyComponent={() => (
+                <View style={styles.noDataContainer}>
+                  <Image source={Images.NoDataFound} style={styles.noDataImage} />
+                  <Text style={styles.noDataText}>No records found!</Text>
+                </View>
+              )}
+            />
+          }
         </ScrollView>
       )}
 
