@@ -1,8 +1,6 @@
-
-
 //import liraries
 import React, { Component, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Share, Alert, Linking, Switch, Modal, ProgressBarAndroid } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Share, Alert, Linking, Switch, Modal, ProgressBarAndroid, Platform } from 'react-native';
 
 import Pressable from 'react-native/Libraries/Components/Pressable/Pressable';
 // import { Colors, Images } from '../Styles/Theme';
@@ -155,7 +153,14 @@ const DrawerContent = (props) => {
         }
 
         const fileName = `app_update_${latestVersion}.apk`;
-        const destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+        // const destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+
+        // Use DocumentDirectoryPath for better compatibility
+        let destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+        // For Android 11+ (API 30+), DownloadDirectoryPath may not be writable
+        if (Platform.OS === 'android' && Platform.Version >= 30) {
+            destPath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+        }
 
         setIsDownloading(true); // Show the progress modal
 
@@ -184,7 +189,7 @@ const DrawerContent = (props) => {
             .catch(err => {
                 setIsDownloading(false); // Hide the progress modal
                 console.error('Download error:', err);
-                Alert.alert('Error', 'Something went wrong while downloading.');
+                Alert.alert('Error', `${err.message || err}`);
             });
     };
 
