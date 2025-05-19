@@ -159,7 +159,7 @@ const DrawerContent = (props) => {
         let destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
         // For Android 11+ (API 30+), DownloadDirectoryPath may not be writable
         if (Platform.OS === 'android' && Platform.Version >= 30) {
-            destPath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+            destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
         }
 
         setIsDownloading(true); // Show the progress modal
