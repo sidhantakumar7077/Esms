@@ -1,10 +1,10 @@
-import {Alert, Image, Pressable, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import React from 'react';
-import {Colors} from '../../Constants/Colors';
-import {moderateScale, screenHeight} from '../../Constants/PixelRatio';
-import {Images} from '../../Constants/Images';
-import {useTheme} from '@react-navigation/native';
-import RenderHTML from 'react-native-render-html';
+import { Colors } from '../../Constants/Colors';
+import { moderateScale, screenHeight } from '../../Constants/PixelRatio';
+import { Images } from '../../Constants/Images';
+import { useTheme } from '@react-navigation/native';
+import RenderHtml from 'react-native-render-html';
 import { downloadFile } from '../../Utils/DownloadFile';
 import rndownloadFile from '../../Utils/rndownload';
 
@@ -37,7 +37,33 @@ let EvaluatedData = [
 
 const Evaluated = ({ data }) => {
   console.log('Evaluated Data', data);
-  const {colors} = useTheme();
+  const { colors } = useTheme();
+  const contentWidth = Dimensions.get('window').width;
+
+  const cleanHtml = (html) => {
+    return html
+      .replace(/<li>\s*<p>/g, '<li>')                // Flatten <li><p> to <li>
+      .replace(/<\/p>\s*<\/li>/g, '</li>')            // Flatten </p></li>
+      .replace(/<p>\s*<h4>/g, '<h4>')                 // Remove <p><h4>
+      .replace(/<\/h4>\s*<\/p>/g, '</h4>')            // Remove </h4></p>
+      .replace(/<p>\s*<strong>/g, '<strong>')         // Clean <p><strong>
+      .replace(/<\/strong>\s*<\/p>/g, '</strong>')    // Clean </strong></p>
+      .replace(/<p>\s*<em>/g, '<em>')                 // Clean <p><em>
+      .replace(/<\/em>\s*<\/p>/g, '</em>')            // Clean </em></p>
+      .replace(/<br><br>/g, '<br>')                   // Clean double breaks
+      .replace(/<p>\s*<\/p>/g, '')                    // Remove empty <p> tags
+      .replace(/<div><div>(.*?)<\/div><\/div>/gs, (_, content) => {
+        // Split and wrap each match item in a <p> tag
+        const lines = content
+          .replace(/([1-5]\. [^a-e]+)([a-e]\. [^1-5]+)/g, '$1<br>$2') // Add break between number and letter
+          .split(/<br>|\n/)
+          .map(line => `<p>${line.trim()}</p>`)
+          .join('');
+        return lines;
+      })
+      .trim();
+  };
+
   return (
     <View>
       {/* {EvaluatedData.map((item, index) => {
@@ -110,157 +136,171 @@ const Evaluated = ({ data }) => {
                   ...styles.titleRow,
                   backgroundColor: colors.lightGreen,
                 }}>
-                <Text style={{...styles.title, color: colors.text}}>
+                <Text style={{ ...styles.title, color: colors.text }}>
                   {item.subject_name}
                 </Text>
-                <View style={{flexDirection: 'row',gap:20}}>
+                <View style={{ flexDirection: 'row', gap: 20 }}>
                   <Pressable
                     style={{
                       ...styles.action,
                       borderColor: Colors.tangerine,
                       backgroundColor: Colors.white2,
                     }}>
-                    <Text style={{...styles.tabText, color: Colors.tangerine}}>
+                    <Text style={{ ...styles.tabText, color: Colors.tangerine }}>
                       Evaluated
                     </Text>
                   </Pressable>
-                   {item.url && (
-                                      <TouchableOpacity
-                                        onPress={() => rndownloadFile(item.url)}
-                                        // onPress={() => downloadFile(item.url)}
-                                        style={{}}>
-                                        <Image
-                                          source={Images.directDownload}
-                                          style={{
-                                            height: moderateScale(20),
-                                            width: moderateScale(20),
-                                            tintColor: colors.green,
-                                            marginTop: 5,
-                                          }}
-                                        />
-                                      </TouchableOpacity>
-                                    )}
-                                
+                  {item.url && (
+                    <TouchableOpacity
+                      onPress={() => rndownloadFile(item.url)}
+                      // onPress={() => downloadFile(item.url)}
+                      style={{}}>
+                      <Image
+                        source={Images.directDownload}
+                        style={{
+                          height: moderateScale(20),
+                          width: moderateScale(20),
+                          tintColor: colors.green,
+                          marginTop: 5,
+                        }}
+                      />
+                    </TouchableOpacity>
+                  )}
+
                 </View>
               </View>
               <View style={{}}>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Homework Date
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.homework_date}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Submission Date
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.submission_date}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Created By
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.created_by}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Evaluated By
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.evaluated_by}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Evalution Date
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.evaluation_date}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Total Marks
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.total_marks}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Marks Obtained
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.obtain_marks}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Note
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.note}
                   </Text>
                 </View>
-                <View style={{marginTop: 10}}>
+                <View style={{ marginTop: 10 }}>
                   <Text
-                    style={{...styles.tabText, fontSize: moderateScale(14)}}>
+                    style={{ ...styles.tabText, fontSize: moderateScale(14) }}>
                     Description
                   </Text>
                   {/* <Text style={{...styles.valueText,color:colors.text}}>{item.description}</Text> */}
-                  <RenderHTML source={{html: item.description}} />
+                  {/* <RenderHTML source={{html: item.description}} /> */}
+                  <RenderHtml
+                    contentWidth={contentWidth}
+                    source={{ html: cleanHtml(item.description) }}
+                    tagsStyles={{
+                      p: { marginBottom: 8, color: '#000', fontSize: 14, lineHeight: 20 },
+                      li: { marginBottom: 6, color: '#000', fontSize: 14 },
+                      ul: { marginLeft: 20, marginBottom: 8 },
+                      ol: { marginLeft: 20, marginBottom: 8 },
+                      h4: { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 6 },
+                      strong: { color: '#000' },
+                      em: { fontStyle: 'italic', color: '#000' },
+                    }}
+                    defaultTextProps={{ selectable: true }}
+                  />
                 </View>
-                 {item.reply && (
-                                         <View style={{flexDirection: 'row', gap: 10}}>
-                                           <TouchableOpacity
-                                             onPress={() =>
-                                                   Alert.alert(
-                                                     "Download File",
-                                                     "Do you want to download this file?",
-                                                     [
-                                                       { text: "Cancel", style: "cancel" },
-                                                       { text: "Download", onPress: () => downloadFile(item.reply.url) }
-                                                     ]
-                                                   )
-                                             }
-                                             style={{
-                                               flexDirection: 'row',
-                                               flex: 1.1,
-                                               marginBottom: 5,
-                                             }}>
-                                             <Image
-                                               source={Images.downloads}
-                                               style={{
-                                                 height: moderateScale(23),
-                                                 width: moderateScale(23),
-                                                 tintColor: colors.primary,
-                                               }}
-                                             />
-                                             <Text
-                                               style={{
-                                                 ...styles.description,
-                                                 marginTop: 5,
-                                                 marginLeft: 10,
-                                                 color: colors.primary,
-                                               }}>
-                                               Download Attachment
-                                             </Text>
-                                           </TouchableOpacity>
-                                         </View>
-                                       )}
+                {item.reply && (
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        Alert.alert(
+                          "Download File",
+                          "Do you want to download this file?",
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            { text: "Download", onPress: () => downloadFile(item.reply.url) }
+                          ]
+                        )
+                      }
+                      style={{
+                        flexDirection: 'row',
+                        flex: 1.1,
+                        marginBottom: 5,
+                      }}>
+                      <Image
+                        source={Images.downloads}
+                        style={{
+                          height: moderateScale(23),
+                          width: moderateScale(23),
+                          tintColor: colors.primary,
+                        }}
+                      />
+                      <Text
+                        style={{
+                          ...styles.description,
+                          marginTop: 5,
+                          marginLeft: 10,
+                          color: colors.primary,
+                        }}>
+                        Download Attachment
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           );
         })}
 
       {!data && (
-        <View style={{marginTop: screenHeight / 4, alignItems: 'center'}}>
+        <View style={{ marginTop: screenHeight / 4, alignItems: 'center' }}>
           <Image
             source={Images.NoDataFound}
             style={{

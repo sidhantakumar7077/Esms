@@ -5,13 +5,14 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Dimensions
 } from 'react-native';
-import React from 'react';
-import {Colors} from '../../Constants/Colors';
-import {moderateScale, screenHeight} from '../../Constants/PixelRatio';
-import {Images} from '../../Constants/Images';
+import React, { useEffect } from 'react';
+import { Colors } from '../../Constants/Colors';
+import { moderateScale, screenHeight } from '../../Constants/PixelRatio';
+import { Images } from '../../Constants/Images';
 import NavigationService from '../../Services/Navigation';
-import {useTheme} from '@react-navigation/native';
+import { useTheme } from '@react-navigation/native';
 
 // import {WebView} from 'react-native-webview';
 import RenderHtml from 'react-native-render-html';
@@ -44,8 +45,34 @@ let PendingData = [
   },
 ];
 
-const Pending = ({data}) => {
-  const {colors} = useTheme();
+const Pending = ({ data }) => {
+  const { colors } = useTheme();
+  const contentWidth = Dimensions.get('window').width;
+
+  const cleanHtml = (html) => {
+    return html
+      .replace(/<li>\s*<p>/g, '<li>')                // Flatten <li><p> to <li>
+      .replace(/<\/p>\s*<\/li>/g, '</li>')            // Flatten </p></li>
+      .replace(/<p>\s*<h4>/g, '<h4>')                 // Remove <p><h4>
+      .replace(/<\/h4>\s*<\/p>/g, '</h4>')            // Remove </h4></p>
+      .replace(/<p>\s*<strong>/g, '<strong>')         // Clean <p><strong>
+      .replace(/<\/strong>\s*<\/p>/g, '</strong>')    // Clean </strong></p>
+      .replace(/<p>\s*<em>/g, '<em>')                 // Clean <p><em>
+      .replace(/<\/em>\s*<\/p>/g, '</em>')            // Clean </em></p>
+      .replace(/<br><br>/g, '<br>')                   // Clean double breaks
+      .replace(/<p>\s*<\/p>/g, '')                    // Remove empty <p> tags
+      .replace(/<div><div>(.*?)<\/div><\/div>/gs, (_, content) => {
+        // Split and wrap each match item in a <p> tag
+        const lines = content
+          .replace(/([1-5]\. [^a-e]+)([a-e]\. [^1-5]+)/g, '$1<br>$2') // Add break between number and letter
+          .split(/<br>|\n/)
+          .map(line => `<p>${line.trim()}</p>`)
+          .join('');
+        return lines;
+      })
+      .trim();
+  };
+
   return (
     <View>
       {/* {1? [1,2].map((item, index) => { */}
@@ -65,11 +92,11 @@ const Pending = ({data}) => {
                   ...styles.titleRow,
                   backgroundColor: colors.lightGreen,
                 }}>
-                <Text style={{...styles.title, color: colors.text}}>
+                <Text style={{ ...styles.title, color: colors.text }}>
                   {item.subject_name}
                 </Text>
                 {/* <Text style={styles.title}>ksjslfjlk</Text> */}
-                <View style={{flexDirection: 'row'}}>
+                <View style={{ flexDirection: 'row' }}>
                   {/* <Pressable style={{ ...styles.action, borderColor: Colors.tangerine, backgroundColor: Colors.white2 }}>
                                     <Text style={{ ...styles.tabText, color: Colors.tangerine }}>Submitted</Text>
                                 </Pressable> */}
@@ -77,7 +104,7 @@ const Pending = ({data}) => {
                     onPress={() =>
                       NavigationService.navigate('UploadHomework', {
                         item,
-                        pagename:'pending'
+                        pagename: 'pending'
                       })
                     }
                     style={{
@@ -85,15 +112,15 @@ const Pending = ({data}) => {
                       borderColor: Colors.Green1,
                       marginLeft: 5,
                     }}>
-                    <Text style={{...styles.tabText, color: Colors.btnText}}>
+                    <Text style={{ ...styles.tabText, color: Colors.btnText }}>
                       Submit
                     </Text>
                   </TouchableOpacity>
-                    {item.url  && (
+                  {item.url && (
                     <TouchableOpacity
                       onPress={() => rndownloadFile(item?.url)}
                       // onPress={() => downloadFile(item)}
-                      style={{marginLeft:10}}>
+                      style={{ marginLeft: 10 }}>
                       <Image
                         source={Images.directDownload}
                         style={{
@@ -108,27 +135,27 @@ const Pending = ({data}) => {
                 </View>
               </View>
               <View style={{}}>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Homework Date
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.homework_date}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Submission Date
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.submission_date}
                   </Text>
                 </View>
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Created By
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.created_by}
                   </Text>
                 </View>
@@ -137,20 +164,20 @@ const Pending = ({data}) => {
                                 <Text style={{...styles.valueText,color:colors.text}}>{item.EvalutedBy}</Text>
                             </View> */}
                 {item.evaluation_date && (
-                  <View style={{flexDirection: 'row', marginTop: 10}}>
-                    <Text style={{...styles.keyText, color: colors.text}}>
+                  <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                    <Text style={{ ...styles.keyText, color: colors.text }}>
                       Evalution Date
                     </Text>
-                    <Text style={{...styles.valueText, color: colors.text}}>
+                    <Text style={{ ...styles.valueText, color: colors.text }}>
                       {item.evaluation_date}
                     </Text>
                   </View>
                 )}
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Total Marks
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.total_marks}
                   </Text>
                 </View>
@@ -158,30 +185,44 @@ const Pending = ({data}) => {
                                 <Text style={{...styles.keyText,color:colors.text}}>Marks Obtained</Text>
                                 <Text style={{...styles.valueText,color:colors.text}}>{item.MarksObtained}</Text>
                             </View> */}
-                <View style={{flexDirection: 'row', marginTop: 10}}>
-                  <Text style={{...styles.keyText, color: colors.text}}>
+                <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                  <Text style={{ ...styles.keyText, color: colors.text }}>
                     Note
                   </Text>
-                  <Text style={{...styles.valueText, color: colors.text}}>
+                  <Text style={{ ...styles.valueText, color: colors.text }}>
                     {item.note || 'NA'}
                   </Text>
                 </View>
-                <View style={{marginTop: 10}}>
+                <View style={{ marginTop: 10 }}>
                   <Text
-                    style={{...styles.tabText, fontSize: moderateScale(14)}}>
+                    style={{ ...styles.tabText, fontSize: moderateScale(14) }}>
                     Description
                   </Text>
                   {/* <Text style={{...styles.valueText, color: colors.text}}>
                     {item.description}
                   </Text> */}
-                  <RenderHtml source={{html: item.description}} />
+                  {/* <RenderHtml source={{html: item.description}} /> */}
+                  <RenderHtml
+                    contentWidth={contentWidth}
+                    source={{ html: cleanHtml(item.description) }}
+                    tagsStyles={{
+                      p: { marginBottom: 8, color: '#000', fontSize: 14, lineHeight: 20 },
+                      li: { marginBottom: 6, color: '#000', fontSize: 14 },
+                      ul: { marginLeft: 20, marginBottom: 8 },
+                      ol: { marginLeft: 20, marginBottom: 8 },
+                      h4: { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 6 },
+                      strong: { color: '#000' },
+                      em: { fontStyle: 'italic', color: '#000' },
+                    }}
+                    defaultTextProps={{ selectable: true }}
+                  />
                 </View>
               </View>
             </View>
           );
         })
       ) : (
-        <View style={{marginTop: screenHeight / 4, alignItems: 'center'}}>
+        <View style={{ marginTop: screenHeight / 4, alignItems: 'center' }}>
           <Image
             source={Images.NoDataFound}
             style={{

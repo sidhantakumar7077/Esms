@@ -355,14 +355,7 @@ const Dashboard = () => {
           </Animated.View>
         </TouchableOpacity>
       </View>
-      <ScrollView
-        style={{
-          width: '99%',
-          alignSelf: 'center',
-          maxWidth: maxWidth,
-          marginBottom: 50,
-        }}
-        nestedScrollEnabled={true}>
+      <ScrollView style={{ width: '99%', alignSelf: 'center', maxWidth: maxWidth, marginBottom: 50 }} nestedScrollEnabled={true}>
         <View
           style={{
             backgroundColor: colors.lightGreen,
@@ -411,46 +404,74 @@ const Dashboard = () => {
               backgroundColor: colors.background,
               borderColor: colors.lightBlck,
               borderWidth: 0.5,
-              height: 400,
+              borderRadius: 12,
+              elevation: 3, // Android shadow
+              shadowColor: '#000', // iOS shadow
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              padding: 15,
+              height: 270,
               overflow: 'hidden',
             }}>
-            <Text style={{ ...styles.title, color: colors.text }}>Notice</Text>
-            <View style={{ marginTop: 5, marginLeft: 2, paddingBottom: 20 }}>
-              <FlatList
-                data={notices}
-                style={{ height: 330 }}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={{
-                      flexDirection: 'row',
-                      columnGap: 10,
-                      width: '90%',
-                      paddingBottom: 30,
-                    }}
-                    onPress={() => NavigationService.navigate('NoticeBoard')}>
+
+            <Text style={{
+              ...styles.title,
+              color: colors.text,
+              fontSize: 18,
+              fontWeight: 'bold',
+              marginBottom: 15,
+            }}>
+              Notice
+            </Text>
+
+            <FlatList
+              data={notices}
+              style={{ flex: 1 }}
+              keyExtractor={item => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={{
+                    marginBottom: 12,
+                    borderBottomWidth: 0.3,
+                    borderBottomColor: colors.lightBlck,
+                    paddingBottom: 8,
+                  }}
+                  onPress={() => NavigationService.navigate('NoticeBoard')}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Image
                       source={Images.email}
                       style={{
-                        height: 15,
-                        width: 15,
+                        height: 18,
+                        width: 18,
                         resizeMode: 'contain',
-                        marginTop: 6,
                         tintColor: colors.text,
+                        marginRight: 8,
                       }}
                     />
-                    <RenderHtml
-                      source={{ html: item.message }}
-                      tagsStyles={{
-                        p: { ...TextStyles.keyText, color: colors.text },
-                      }}
-                    />
-                  </TouchableOpacity>
-                )}
-                contentContainerStyle={{ paddingVertical: 10 }}
-              />
-              {/*  {notices.map((item, index) => {
+                    <Text style={{ color: colors.text, fontWeight: '400' }}>
+                      {item.publish_date}
+                    </Text>
+                  </View>
+
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontWeight: '600',
+                      marginLeft: 26,
+                      marginTop: 2,
+                      fontSize: 14,
+                    }}>
+                    {item.day_name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={{ paddingBottom: 10 }}
+              showsVerticalScrollIndicator={false}
+            />
+            {/*  {notices.map((item, index) => {
                 return (
                   <TouchableOpacity
                     key={index}
@@ -477,7 +498,6 @@ const Dashboard = () => {
                   </TouchableOpacity>
                 );
               })} */}
-            </View>
           </View>
 
           {userData?.type == 'student' && (
