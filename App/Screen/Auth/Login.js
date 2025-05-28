@@ -48,7 +48,7 @@ const items = [
 ];
 
 const Login = () => {
-  
+
   const [visiblePass, setVisiblePass] = useState(true);
   const [userName, setUserName] = useState(null);
   const [password, setPassword] = useState(null);
@@ -104,7 +104,7 @@ const Login = () => {
         let paramsStr = JSON.stringify(params);
         if (logindata != paramsStr) {
           Alert.alert('', 'Want to save username and password ?', [
-            {text: 'No', onPress: () => console.log('cancelled'), style: 'No'},
+            { text: 'No', onPress: () => console.log('cancelled'), style: 'No' },
             {
               text: 'Yes',
               onPress: async () => {
@@ -273,7 +273,16 @@ const Login = () => {
             flex: 1,
           }}>
           <View style={{ alignItems: 'center', marginHorizontal: 2, flex: 1 }}>
-            <View style={{ marginTop: 80, alignItems: 'center' }}>
+            <View style={{ marginTop: 60, alignItems: 'center' }}>
+              <Image
+                source={defultSetting.app_logo ? { uri: defultSetting.app_logo } : Images.logoImage}
+                resizeMode="contain"
+                style={{
+                  height: 40,
+                  width: 200,
+                  marginBottom: 10,
+                }}
+              />
               <Text
                 style={{
                   color: 'green',
@@ -283,12 +292,12 @@ const Login = () => {
                 {defultSetting.school_name}
                 {/* School Management */}
               </Text>
-              <Text style={{ fontSize: textSize(15), fontWeight: '500' }}>
+              {/* <Text style={{ fontSize: textSize(15), fontWeight: '500' }}>
                 ESMS - Portal
               </Text>
               <Text style={{ fontSize: textSize(15), fontWeight: '500' }}>
                 Department of School Education
-              </Text>
+              </Text> */}
             </View>
 
             <LinearGradient
@@ -298,7 +307,7 @@ const Login = () => {
               style={styles.aiPowered}>
               <Text style={{ color: 'white', fontSize: textSize(9) }}>
                 {' '}
-                AI Powered solution to capture attendance in Schools of AP
+                Empowering education through seamless management.
               </Text>
             </LinearGradient>
 
@@ -347,7 +356,7 @@ const Login = () => {
               // backgroundColor:'gray'
             }}
           /> */}
-          <View style={{ marginTop: 50 }}>
+          <View style={{ marginTop: 20 }}>
             <View style={{ marginTop: 25 }}>
               <TextInput
                 placeholder="USERNAME"
@@ -451,7 +460,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 300,
     height: 300,
-    marginTop: 80,
+    marginTop: 60,
   },
   name: {
     color: Colors.greyText,
