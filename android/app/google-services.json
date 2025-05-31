@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "408139448170",
-    "project_id": "e-sms-5d42b",
-    "storage_bucket": "e-sms-5d42b.firebasestorage.app"
+    "project_number": "516159326346",
+    "project_id": "esms-272bc",
+    "storage_bucket": "esms-272bc.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:408139448170:android:fd5df3d104a7cef5c8af13",
+        "mobilesdk_app_id": "1:516159326346:android:ce3e9d6c52400cb8df0573",
         "android_client_info": {
-          "package_name": "com.esms"
+          "package_name": "com.esms.scriptlab"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCggJlNl9I5kqXMlXfXBI_H8CK-0eMVV0I"
+          "current_key": "AIzaSyAQHLggrApfu5-ugwH6Yxc_zZgohRwKFvw"
         }
       ],
       "services": {

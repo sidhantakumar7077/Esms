@@ -323,7 +323,7 @@ const DrawerContent = (props) => {
                         )
                     })}
 
-                    <View style={{ borderTopWidth: 0.5, borderTopColor: '#a0a0a0', marginTop: 30, marginLeft: -moderateScale(20), paddingLeft: moderateScale(20) }}>
+                    {/* <View style={{ borderTopWidth: 0.5, borderTopColor: '#a0a0a0', marginTop: 30, marginLeft: -moderateScale(20), paddingLeft: moderateScale(20) }}>
                         <Text style={{ marginTop: 10, flex: 1, color: colors.text, opacity: 0.6 }}>Current Version {appVersion}</Text>
                         <View style={{ flex: 6, backgroundColor: colors.background }}></View>
                         {showUpdatePrompt && (
@@ -354,7 +354,7 @@ const DrawerContent = (props) => {
                                 </Modal>
                             )}
                         </>
-                    </View>
+                    </View> */}
                 </View>
             </ScrollView>
 

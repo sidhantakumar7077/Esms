@@ -76,9 +76,9 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.esms"
+    namespace "com.esms.scriptlab"
     defaultConfig {
-        applicationId "com.esms"
+        applicationId "com.esms.scriptlab"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

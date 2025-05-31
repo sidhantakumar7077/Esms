@@ -1,4 +1,4 @@
-package com.esms;
+package com.esms.scriptlab;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;

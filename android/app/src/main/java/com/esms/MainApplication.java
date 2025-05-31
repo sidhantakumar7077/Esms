@@ -1,4 +1,4 @@
-package com.esms;
+package com.esms.scriptlab;
 
 import android.app.Application;
 import com.facebook.react.PackageList;

@@ -322,6 +322,7 @@ const Dashboard = () => {
         <Pressable>
           <Image
             source={{ uri: defultSetting?.app_logo }}
+            resizeMode='contain'
             style={{
               height: 20,
               width: 98,
