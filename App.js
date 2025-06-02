@@ -9,6 +9,7 @@ import {
   useColorScheme,
   Alert,
   PermissionsAndroid,
+  Platform
 } from 'react-native';
 // import { Theme } from 'react-native-basic-elements';
 
@@ -35,6 +36,9 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   // const [isDark, setIsDark] = useState(colorScheme == 'dark');
   const theme = appSetting.darkMode ? CustomDarkTheme : LightTheme;
+
+  const apiLevel = Platform.Version;
+  console.log(`API Level: ${apiLevel}`);
 
   const dispatch = useDispatch();
   const {Request} = UseApi();
