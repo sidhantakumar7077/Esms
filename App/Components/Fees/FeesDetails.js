@@ -1,10 +1,12 @@
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
@@ -18,6 +20,7 @@ import {
 import UseApi from '../../ApiConfig';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@react-navigation/native';
+import RazorpayCheckout from 'react-native-razorpay';
 
 const FeesDetails = () => {
 
@@ -41,13 +44,56 @@ const FeesDetails = () => {
       if (data.status && data?.data) {
         setTransportFees(data.data?.tranport_fee);
         setStudentDueFees(data.data?.student_due_fee);
-        console.log("tranport_fee", data.data?.tranport_fee);
       }
     } catch (err) {
       console.log('Error fetching fees:', err);
     }
-
     setLoading(false);
+  };
+
+  // Payment function using Razorpay
+  const makePayment = (item) => {
+    // Determine payable amount. If due_amount exists and is greater than 0, use it; otherwise, use full amount.
+    const payable = parseFloat(item.due_amount);
+
+    // Convert amount to paise. (Example: Rs 500 => 500*100 = 50000)
+    const amountInPaise = payable * 100;
+
+    const options = {
+      description: `Payment for ${item.fees_group_name}`,
+      image: Images.esmsLogo, // Replace with your app logo
+      currency: 'INR',
+      key: 'rzp_test_9gqYKNX69Zy48S', // Replace with your Razorpay key
+      amount: amountInPaise,
+      name: 'E-SMS',
+      prefill: {
+        email: userData.email || '',
+        contact: userData.phone || '',
+        name: userData.name || '',
+      },
+      theme: { color: Colors.Green1 },
+    };
+
+    RazorpayCheckout.open(options)
+      .then((data) => {
+        // Payment succeeded; data contains the Razorpay payment id and other info.
+        console.log('Payment successful, Payment ID:', data.razorpay_payment_id);
+        Alert.alert(
+          'Payment Successful',
+          `Your payment of ₹${payable} was successful.`,
+          [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+        );
+        // You might want to update the fee status on your backend
+      })
+      .catch((error) => {
+        // Payment failed; error contains a description field.
+        console.log('Payment failed:', error.description);
+        Alert.alert(
+          'Payment Failed',
+          `Your payment could not be processed: ${error.description}`,
+          [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+        );
+      });
   };
 
   const renderItem = ({ item }) => (
@@ -56,6 +102,22 @@ const FeesDetails = () => {
         <Text style={{ ...TextStyles.title2, color: colors.text }}>
           {item.fees_group_name}
         </Text>
+        {/* Add Payment Button for unpaid or partially paid fees */}
+        {(item.status.toLowerCase() === 'unpaid' || item.status.toLowerCase() === 'partial') && (
+          <TouchableOpacity
+            onPress={() => { makePayment(item) }}
+            activeOpacity={0.8}
+            style={{
+              backgroundColor: Colors.Green1,
+              padding: moderateScale(5),
+              borderRadius: moderateScale(5)
+            }}
+          >
+            <Text style={{ ...TextStyles.title2, color: Colors.white2 }}>
+              Pay Now
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.detailsContainer}>
         <View style={{ flex: 10 }}>
@@ -138,8 +200,6 @@ const FeesDetails = () => {
           }
         </ScrollView>
       )}
-
-
     </View>
   );
 };
@@ -152,7 +212,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.black,
     textAlign: 'center',
-    // marginVertical: moderateScale(10),
   },
   detailsContainer: {
     flexDirection: 'row',
@@ -179,14 +238,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   noDataContainer: {
-    // marginTop: screenHeight / 4,
     alignItems: 'center',
   },
   noDataImage: {
     height: moderateScale(60),
     width: moderateScale(60),
     opacity: 0.5,
-    marginTop: 10
+    marginTop: 10,
   },
   noDataText: {
     fontSize: moderateScale(14),
