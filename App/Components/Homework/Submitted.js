@@ -284,6 +284,7 @@ const Submitted = ({ data, loading }) => {
                         [
                           { text: "Cancel", style: "cancel" },
                           { text: "Download", onPress: () => rndownloadFile(item.reply?.url) }
+                          // {text: "Download", onPress: () => console.log("Download pressed", item.reply?.url)},
                           //  { text: "Download", onPress: () => downloadFile(item.reply) }
                         ]
                       )
