@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import UseApi from '../ApiConfig';
 // import { Dropdown } from 'react-native-element-dropdown';
 import { setVehicleDetails } from '../Redux/reducer/User';
-import { useTheme } from '@react-navigation/native';
+import { useTheme, useNavigation } from '@react-navigation/native';
 import moment from 'moment';
 // import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
@@ -29,6 +29,7 @@ const stopagesData = [
 ];
 const TransportRoutes = () => {
 
+    const navigation = useNavigation();
     const { userData, vehicleDetails } = useSelector(state => state.User);
     const dispatch = useDispatch();
     const { Request } = UseApi();
@@ -170,52 +171,12 @@ const TransportRoutes = () => {
                             </View> */}
                         </View>
                     </View>
-                    {/* <View style={{ ...appStyles.card, paddingVertical: 10, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
-                        <View style={{ flexDirection: 'row', columnGap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
-                            <Image
-                                source={Images.distance}
-                                style={{
-                                    height: moderateScale(12),
-                                    width: moderateScale(12),
-                                    marginTop: 12,
-                                    // resizeMode: 'stretch',
-                                    tintColor: Colors.green2,
-                                }}
-                            />
-                            <Dropdown
-                                style={styles.dropdown}
-                                maxHeight={screenHeight / 2}
-                                itemTextStyle={{ marginVertical: -8 }}
-                                selectedTextStyle={{ color: colors.text }}
-                                placeholderStyle={{ color: colors.text }}
-                                labelField={'label'}
-                                valueField={'value'}
-                                data={[{ label: 'Home to School', value: '1' }, { label: 'School to Home', value: '0' }]}
-                                value={routeDirection}
-                                placeholder='Select your route direction'
-                                onChange={(item) => {
-                                    setIsTowordSchool(item.value);
-                                    if (selectRouteErr) {
-                                        setSelectRouteErr('');
-                                    }
-                                }}
-                                disable={userData.type == 'student'}
-                            />
-                        </View>
-                        <View style={{ borderBottomWidth: 0.7, marginHorizontal: 10, borderStyle: 'dotted', borderColor: colors.lightBlck }} />
-                        {selectRouteErr && <Text style={{ color: Colors.red1, padding: 10 }}>{selectRouteErr}</Text>}
-                        <TouchableOpacity style={{ ...styles.btn, backgroundColor: colors.text }}
-                            onPress={() => {
-                                if (isTowordSchool === null && userData.type == 'driver') {
-                                    setSelectRouteErr('Please select your route direction before start driving!');
-                                } else {
-                                    NavigationService.navigate('TransportMap', { stopages: stopages });
-                                }
-                            }}
-                        >
-                            <Text style={{ color: colors.background, fontSize: 17 }}>{userData?.type == 'driver' ? 'Start Driving' : 'View Vehicle Location'}</Text>
+                    {/* View My location button */}
+                    <View style={{ ...appStyles.card, paddingVertical: 10, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                        <TouchableOpacity style={{ ...styles.btn, backgroundColor: colors.text }} onPress={() => navigation.navigate('LocationTracking')}>
+                            <Text style={{ color: colors.background, fontSize: 17 }}>View My Location</Text>
                         </TouchableOpacity>
-                    </View> */}
+                    </View>
 
                     {/* {userData?.type == 'driver' && <View style={appStyles.card}>
                         <View style={{ flexDirection: 'row', columnGap: 5, paddingHorizontal: 10 }}>

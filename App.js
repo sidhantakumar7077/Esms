@@ -27,6 +27,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import UseApi from './App/ApiConfig';
 import {LightTheme, CustomDarkTheme} from './App/Components/ThemeContext';
 
+export const GOOGLE_MAPS_APIKEY = "AIzaSyDPTHOYE5ZFGDIYxVsiJmOwMn9sHx0iYQA";
+
 const Stack = createStackNavigator();
 // create a component
 const App = () => {
@@ -37,7 +39,8 @@ const App = () => {
   // const [isDark, setIsDark] = useState(colorScheme == 'dark');
   const theme = appSetting.darkMode ? CustomDarkTheme : LightTheme;
 
-  const apiLevel = Platform.Version;
+  // const apiLevel = Platform.Version;
+  const apiLevel = Platform.OS === 'android' ? Platform.constants.Version : 'N/A';
   console.log(`API Level: ${apiLevel}`);
 
   const dispatch = useDispatch();
