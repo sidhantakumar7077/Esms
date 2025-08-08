@@ -16,7 +16,7 @@ import haversine from "haversine";
 import { GOOGLE_MAPS_APIKEY } from "../../../App";
 
 export default function LocationTracking() {
-    const [location, setLocation] = useState(initialLocation);
+
     const [distanceToDestination, setDistanceToDestination] = useState(null);
     const [distanceToNextStop, setDistanceToNextStop] = useState(null);
     const [nextStop, setNextStop] = useState(null);
@@ -34,6 +34,8 @@ export default function LocationTracking() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
     };
+    
+    const [location, setLocation] = useState(initialLocation);
 
     const destination = {
         latitude: 20.368824,
@@ -137,37 +139,39 @@ export default function LocationTracking() {
         <SafeAreaView style={styles.container}>
             {location && hasTried ? (
                 <>
-                    <MapView
-                        style={styles.map}
-                        region={location}
-                        showsUserLocation={true}
-                    >
-                        <Marker coordinate={location} title="You are here" pinColor="blue" />
+                    {location?.latitude && location?.longitude && (
+                        <MapView
+                            style={styles.map}
+                            region={location}
+                            showsUserLocation={true}
+                        >
+                            <Marker coordinate={location} title="You are here" pinColor="blue" />
 
-                        {stops.map((stop, index) => (
+                            {stops.map((stop, index) => (
+                                <Marker
+                                    key={index}
+                                    coordinate={stop}
+                                    title={stop.title}
+                                    pinColor="orange"
+                                />
+                            ))}
+
                             <Marker
-                                key={index}
-                                coordinate={stop}
-                                title={stop.title}
-                                pinColor="orange"
+                                coordinate={destination}
+                                title={destination.title}
+                                pinColor="green"
                             />
-                        ))}
 
-                        <Marker
-                            coordinate={destination}
-                            title={destination.title}
-                            pinColor="green"
-                        />
-
-                        <MapViewDirections
-                            origin={location}
-                            destination={destination}
-                            waypoints={stops}
-                            apikey={GOOGLE_MAPS_APIKEY}
-                            strokeWidth={4}
-                            strokeColor="blue"
-                        />
-                    </MapView>
+                            <MapViewDirections
+                                origin={location}
+                                destination={destination}
+                                waypoints={stops}
+                                apikey={GOOGLE_MAPS_APIKEY}
+                                strokeWidth={4}
+                                strokeColor="blue"
+                            />
+                        </MapView>
+                    )}
 
                     <View style={styles.infoCard}>
                         <Text style={styles.infoTitle}>🧭 Route Info</Text>
