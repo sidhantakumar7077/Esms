@@ -319,7 +319,7 @@ const Dashboard = () => {
             }}
           />
         </Pressable>
-        <Pressable>
+        {/* <Pressable>
           <Image
             source={{ uri: defultSetting?.app_logo }}
             // resizeMode='contain'
@@ -330,7 +330,7 @@ const Dashboard = () => {
               tintColor: colors.text,
             }}
           />
-        </Pressable>
+        </Pressable> */}
         <TouchableOpacity
           // onPress={() => NavigationService.navigate('NoticeBoard')}
           onPress={shakeBell}>

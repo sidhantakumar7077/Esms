@@ -61,43 +61,39 @@ const ExamResult = ({ route }) => {
 
     const getExamSchedule = async () => {
         setLoading(true);
-        const formBody = new URLSearchParams({
-            student_session_id: userData?.student_session_id,
-            type: 3,
-            exam_group_class_batch_exam_id: examId,
-        }).toString();
+
+        // payload (send as strings to be safe)
+        const payload = {
+            student_session_id: String(userData?.student_session_id ?? ''),
+            type: String(3),
+            exam_group_class_batch_exam_id: String(examId ?? ''),
+        };
 
         try {
-            const response = await fetch('https://esmsv2.scriptlab.in/api/apicontroller/exam-schedule', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-API-Key': '123123'
-                },
-                body: formBody,
-            });
+            const res = await Request('exam-schedule', 'POST', payload);
+            console.log('Exam Schedule Response:', res);
 
-            const result = await response.json();
-            console.log('Exam Schedule Response:', result);
+            const ok = res?.status === true || res?.success === true;
+            if (ok && res?.data) {
+                const d = res.data;
 
-            if (result.status === true) {
-                setLoading(false);
-                setExamResults(result.data.exam);
-                setCresult(result.data.cresult);
-                setConsolidate(result.data.consolidate);
-                setConsolidateResult(result.data.consolidate_result);
-                setConsolidateDivision(result.data.consolidate_division);
+                setExamResults(d?.exam ?? []);
+                setCresult(d?.cresult ?? []);
+                setConsolidate(d?.consolidate ?? []);
+                setConsolidateResult(d?.consolidate_result ?? []);
+                setConsolidateDivision(d?.consolidate_division ?? []);
 
-                const keys = result.data.exam.map(exam => `exam_${exam.exam_group_class_batch_exam_id}`);
-                setExamKeys(keys); // 👈 store in state
-                // console.log('Exam Keys:', keys);
+                const keys = (d?.exam ?? []).map(
+                    (exam) => `exam_${exam?.exam_group_class_batch_exam_id}`
+                );
+                setExamKeys(keys);
             } else {
-                setLoading(false);
-                console.warn('Request failed:', result.message);
+                console.warn('Request failed:', res?.message || 'Unable to fetch exam schedule');
             }
         } catch (error) {
-            setLoading(false);
             console.error('API Error:', error);
+        } finally {
+            setLoading(false);
         }
     };
 

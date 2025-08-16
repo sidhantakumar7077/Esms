@@ -24,7 +24,7 @@ const AuthStack = () => {
 
     return (
         <Stack.Navigator
-            initialRouteName='Login'
+            initialRouteName='SchoolCodeScreen'
             screenOptions={{
                 headerShown: false,
                 // gestureEnabled: true,

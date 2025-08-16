@@ -1,6 +1,13 @@
+import { useDispatch, useSelector } from 'react-redux';
+
 const UseApi = () => {
-  const BASE_URL = 'https://esmsv2.scriptlab.in/api/apicontroller/';
-  const imageBaseUrl = 'https://esmsv2.scriptlab.in/';
+
+  const { userData, defultSetting } = useSelector(state => state.User);
+
+  // const BASE_URL = 'https://esmsv2.scriptlab.in/api/apicontroller/';
+  // const imageBaseUrl = 'https://esmsv2.scriptlab.in/';
+  const BASE_URL = `${defultSetting.base_url}api/apicontroller/`;
+  const imageBaseUrl = defultSetting.base_url;
 
   const Request = async (endpoint, method = 'GET', params = null) => {
     var xmlRequest = new XMLHttpRequest();
@@ -63,7 +70,7 @@ const UseApi = () => {
     });
   };
 
-  return {Request,imageBaseUrl};
+  return {Request,imageBaseUrl, BASE_URL};
 };
 
 export default UseApi;
