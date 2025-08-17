@@ -17,7 +17,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { Colors } from '../../Constants/Colors';
 import { textSize } from '../../Constants/PixelRatio';
 import { Images } from '../../Constants/Images';
@@ -29,12 +29,14 @@ import { setDefultSetting } from '../../Redux/reducer/User';
 const SchoolCodeScreen = () => {
 
     const navigation = useNavigation();
+    const isFocused = useIsFocused();
     const insets = useSafeAreaInsets();
     const [schoolCode, setSchoolCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorText, setErrorText] = useState('');
     const { Request } = UseApi();
     const dispatch = useDispatch();
+    const { defultSetting } = useSelector(state => state.User);
 
     // gentle logo float
     const float = useRef(new Animated.Value(0)).current;
@@ -48,21 +50,6 @@ const SchoolCodeScreen = () => {
     }, [float]);
 
     const canSubmit = useMemo(() => schoolCode.trim().length > 0 && !loading, [schoolCode, loading]);
-
-    const fetchData1 = async (base_url) => {
-        try {
-            setLoading(true);
-            const data = await Request('get-settings', 'GET');
-            console.log('API Response:', data);
-            if (data?.statusCode === 200 && data.status) {
-                dispatch(setDefultSetting(data));
-            }
-        } catch (err) {
-            console.log('API Error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const fetchData = async (baseUrl) => {
         try {
@@ -83,6 +70,7 @@ const SchoolCodeScreen = () => {
             }
 
             if (data?.statusCode === 200 && data.status) {
+                console.log("Settings fetched successfully:", data);
                 dispatch(setDefultSetting(data));
             } else {
                 const msg = data?.message || 'Failed to load settings.';
@@ -135,6 +123,7 @@ const SchoolCodeScreen = () => {
 
             const data = json.data;
             await AsyncStorage.setItem('school_data', JSON.stringify(data));
+            await AsyncStorage.setItem('school_code', value);
 
             const host = String(data.school_url || '').trim().replace(/\/+$/, '') || 'https://esmsv2.scriptlab.in';
             await AsyncStorage.setItem('api_base_url', `${host}/api/apicontroller/`);
@@ -152,6 +141,18 @@ const SchoolCodeScreen = () => {
             setLoading(false);
         }
     };
+
+    const getSchoolCode = async () => {
+        const value = await AsyncStorage.getItem('school_code');
+        setSchoolCode(value || '');
+        // console.log("School code from storage:",value, !!value);
+    };
+
+    useEffect(() => {
+        if (isFocused) {
+            getSchoolCode();
+        }
+    }, [isFocused]);
 
     return (
         <SafeAreaView style={[styles.safe, { paddingBottom: insets.bottom }]}>
@@ -172,7 +173,7 @@ const SchoolCodeScreen = () => {
 
             {/* Curved gradient header (unchanged) */}
             <LinearGradient
-                colors={[Colors.tangerine, '#FF9F62']}
+                colors={[Colors.Green1, Colors.Green1]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
 
     button: {
         marginTop: 14,
-        backgroundColor: Colors.tangerine,
+        backgroundColor: Colors.Green1,
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
         fontSize: textSize(12),
     },
     footerLink: {
-        color: Colors.tangerine,
+        color: Colors.Green1,
         fontWeight: '700',
     },
 

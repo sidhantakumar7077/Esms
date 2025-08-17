@@ -1,4 +1,6 @@
-import { useDispatch, useSelector } from 'react-redux';
+// import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const UseApi = () => {
 
@@ -6,10 +8,23 @@ const UseApi = () => {
 
   // const BASE_URL = 'https://esmsv2.scriptlab.in/api/apicontroller/';
   // const imageBaseUrl = 'https://esmsv2.scriptlab.in/';
-  const BASE_URL = `${defultSetting.base_url}api/apicontroller/`;
-  const imageBaseUrl = defultSetting.base_url;
+  // const BASE_URL = `${defultSetting.base_url}api/apicontroller/`;
+  // const imageBaseUrl = defultSetting.base_url;
+
+  // Resolve URLs at call time; prefer persisted values from AsyncStorage.
+  const resolveUrls = async () => {
+    const storedApiBase = await AsyncStorage.getItem('api_base_url');   // e.g. https://school.example.com/api/apicontroller/
+    const storedImgBase = await AsyncStorage.getItem('image_base_url'); // e.g. https://school.example.com/
+    const fallbackApi = `${defultSetting?.base_url ?? ''}api/apicontroller/`;
+    const fallbackImg = defultSetting?.base_url ?? '';
+    return {
+      BASE_URL: storedApiBase || fallbackApi,
+      imageBaseUrl: storedImgBase || fallbackImg,
+    };
+  };
 
   const Request = async (endpoint, method = 'GET', params = null) => {
+    const { BASE_URL } = await resolveUrls();
     var xmlRequest = new XMLHttpRequest();
     // xmlRequest.withCredentials = true;
     let url = BASE_URL + endpoint;
@@ -63,14 +78,18 @@ const UseApi = () => {
               }
             }
           } else {
-            reject({error: 'Something went wrong !'});
+            reject({ error: 'Something went wrong !' });
           }
         }
       };
     });
   };
 
-  return {Request,imageBaseUrl, BASE_URL};
+  return {
+    Request,
+    getImageBaseUrl: async () => (await resolveUrls()).imageBaseUrl,
+    getBaseUrl: async () => (await resolveUrls()).BASE_URL,
+  };
 };
 
 export default UseApi;
