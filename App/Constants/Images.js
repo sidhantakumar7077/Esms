@@ -16,6 +16,7 @@ export const Images ={
    dailyAssignment2: require('../Assets/Icons/dailyAsignment.png'),
    transportation: require('../Assets/Icons/transportation.png'),
 
+   schoolCode1: require('../Assets/Images/schollcode1.png'),
    logoImage: require('../Assets/Images/logoImage.png'),
    pageBackgound: require('../Assets/Images/pageBackgound.png'),
    loginBackground: require('../Assets/Images/loginBackground.jpg'),
