@@ -24,6 +24,7 @@ import { textSize } from '../../Constants/PixelRatio';
 import { Images } from '../../Constants/Images';
 import UseApi from '../../ApiConfig';
 import Toast from 'react-native-simple-toast';
+import { useTheme } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { setDefultSetting } from '../../Redux/reducer/User';
 
@@ -34,6 +35,7 @@ const SchoolCodeScreen = () => {
     const navigation = useNavigation();
     const isFocused = useIsFocused();
     const insets = useSafeAreaInsets();
+    const { colors } = useTheme();
     const [schoolCode, setSchoolCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorText, setErrorText] = useState('');
@@ -167,7 +169,7 @@ const SchoolCodeScreen = () => {
 
             {/* HERO / TOP SECTION (taller, centered) */}
             <LinearGradient
-                colors={[Colors.Green1, Colors.Green1]}
+                colors={['#314c61', '#314c61']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -260,14 +262,14 @@ const styles = StyleSheet.create({
     },
     heroTitle: {
         textAlign: 'center',
-        color: '#ffffffff',
+        color: '#fff',
         fontWeight: '800',
         fontSize: textSize(22),
         letterSpacing: 0.3,
     },
     heroSubtitle: {
         textAlign: 'center',
-        color: 'rgba(255, 255, 255, 0.95)',
+        color: '#fff',
         marginTop: 6,
         // marginBottom: 20,
         fontSize: textSize(13),
@@ -316,7 +318,7 @@ const styles = StyleSheet.create({
 
     button: {
         marginTop: 16,
-        backgroundColor: Colors.Green1,
+        backgroundColor: '#314c61',
         paddingVertical: 15,
         borderRadius: 14,
         alignItems: 'center',
