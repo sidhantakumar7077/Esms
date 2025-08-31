@@ -103,7 +103,7 @@ const FeesDetails = () => {
           {item.fees_group_name}
         </Text>
         {/* Add Payment Button for unpaid or partially paid fees */}
-        {(item.status.toLowerCase() === 'unpaid' || item.status.toLowerCase() === 'partial') && (
+        {/* {(item.status.toLowerCase() === 'unpaid' || item.status.toLowerCase() === 'partial') && (
           <TouchableOpacity
             onPress={() => { makePayment(item) }}
             activeOpacity={0.8}
@@ -117,7 +117,7 @@ const FeesDetails = () => {
               Pay Now
             </Text>
           </TouchableOpacity>
-        )}
+        )} */}
       </View>
       <View style={styles.detailsContainer}>
         <View style={{ flex: 10 }}>
