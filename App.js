@@ -1,7 +1,7 @@
 //import liraries
-import {NavigationContainer} from '@react-navigation/native';
-import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
-import React, {Component, useEffect, useState} from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
+import React, { Component, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,42 +9,94 @@ import {
   useColorScheme,
   Alert,
   PermissionsAndroid,
-  Platform
+  Platform,
+  BackHandler,
+  Linking
 } from 'react-native';
 // import { Theme } from 'react-native-basic-elements';
+import Modal from 'react-native-modal';
 
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import AuthStack from './App/Navigation/AuthStack';
 import NavigationService from './App/Services/Navigation';
 import AuthService from './App/Services/Auth';
-import {setuser} from './App/Redux/reducer/User';
+import { setuser } from './App/Redux/reducer/User';
 import AppStack from './App/Navigation/AppStack';
 import SplashScreen from './App/Screen/SplashScreen';
 // import { initializeApp } from '@react-native-firebase/app';
 
+import VersionCheck from 'react-native-version-check';
 import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UseApi from './App/ApiConfig';
-import {LightTheme, CustomDarkTheme} from './App/Components/ThemeContext';
+import { LightTheme, CustomDarkTheme } from './App/Components/ThemeContext';
 
 export const GOOGLE_MAPS_APIKEY = "AIzaSyDPTHOYE5ZFGDIYxVsiJmOwMn9sHx0iYQA";
 
 const Stack = createStackNavigator();
 // create a component
 const App = () => {
-  const {login_status, userData, appSetting} = useSelector(state => state.User);
+
+  const { login_status, userData, appSetting } = useSelector(state => state.User);
   const colorScheme = useColorScheme();
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [loading, setLoading] = useState(true);
   // const [isDark, setIsDark] = useState(colorScheme == 'dark');
   const theme = appSetting.darkMode ? CustomDarkTheme : LightTheme;
 
+  // Version Check
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [latestVersion, setLatestVersion] = useState('');
+
+  const checkForUpdates = async () => {
+    try {
+      const currentVersion = await VersionCheck.getCurrentVersion();
+      const storeVersion = await VersionCheck.getLatestVersion({
+        provider: 'playStore',
+      });
+
+      console.log("storeVersion:", storeVersion);
+      console.log("currentVersion:", currentVersion);
+
+      const updateInfo = await VersionCheck.needUpdate({
+        currentVersion,
+        latestVersion: storeVersion,
+      });
+
+      if (updateInfo && updateInfo.isNeeded) {
+        setLatestVersion(storeVersion);
+        setShowUpdateModal(true);
+        console.log("Update is required to version:", storeVersion);
+      } else {
+        console.log("No update needed or updateInfo is null");
+      }
+    } catch (error) {
+      console.error('Error checking app version:', error);
+    }
+  };
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (showUpdateModal) {
+        return true; // Prevent default behavior (closing the modal)
+      }
+      return false; // Allow default behavior
+      // BackHandler.exitApp();
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+
+    return () => {
+      backHandler.remove();
+    };
+  }, [showUpdateModal]);
+
   // const apiLevel = Platform.Version;
   const apiLevel = Platform.OS === 'android' ? Platform.constants.Version : 'N/A';
   console.log(`API Level: ${apiLevel}`);
 
   const dispatch = useDispatch();
-  const {Request} = UseApi();
+  const { Request } = UseApi();
 
   useEffect(() => {
     // initUser()
@@ -55,6 +107,7 @@ const App = () => {
     createNotificationListeners();
     setTimeout(() => {
       setShowSplashScreen(false);
+      checkForUpdates();
     }, 4000);
   }, []);
 
@@ -232,8 +285,80 @@ const App = () => {
         </Stack.Navigator>
       </NavigationContainer>
       {/* </Theme.Provider> */}
+
+      {/* Version Update Modal */}
+      <Modal isVisible={showUpdateModal} style={styles.modalContainer}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalHeader}>Update Available</Text>
+          <Text style={styles.modalText}>
+            A new version of the app is available. Please update to version <Text style={styles.modalVersion}>{latestVersion}</Text> for the best experience.
+          </Text>
+          <View style={styles.modalButtonContainer}>
+            <Text
+              style={styles.modalButton}
+              onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.esms.scriptlab')}
+            >
+              Update Now
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 export default App;
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBox: {
+    backgroundColor: '#ffffff',
+    padding: 25,
+    borderRadius: 15,
+    width: '85%',
+    alignItems: 'center',
+    elevation: 5, // Add shadow for Android
+    shadowColor: '#000', // Add shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  modalHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#314c61', // Highlight color for the header
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  modalVersion: {
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalButtonContainer: {
+    marginTop: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButton: {
+    backgroundColor: '#314c61',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    width: '80%',
+  },
+})
