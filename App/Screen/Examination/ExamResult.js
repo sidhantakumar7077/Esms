@@ -116,7 +116,7 @@ const ExamResult = ({ route }) => {
                                 {/* Header */}
                                 <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
                                     <Text style={{ ...TextStyles.title3, color: colors.text }}>
-                                        {examItem.exam_name.toUpperCase()}
+                                        {examItem?.exam_name?.toUpperCase()}
                                     </Text>
                                 </View>
 
@@ -142,7 +142,7 @@ const ExamResult = ({ route }) => {
 
                                     {/* Table Rows */}
                                     <View style={{ marginTop: 5 }}>
-                                        {examItem.values.map((item, subIndex) => (
+                                        {examItem?.values?.map((item, subIndex) => (
                                             <View key={subIndex} style={{ flexDirection: 'row', marginTop: 10 }}>
                                                 <View style={{ flex: 1.2 }}>
                                                     <Text style={{ ...TextStyles.keyText, color: colors.text }}>{item.subject}</Text>
@@ -176,38 +176,38 @@ const ExamResult = ({ route }) => {
                                         {/* Row 3: Grand Total & Total Obtain Marks */}
                                         <View style={{ flexDirection: 'row' }}>
                                             <Text style={{ flex: 0.9, fontSize: 14, color: colors.text }}>
-                                                <Text style={{ fontWeight: '600' }}>Grand Total:</Text> {examItem.footer?.['grand_total'] || '-'}
+                                                <Text style={{ fontWeight: '600' }}>Grand Total:</Text> {examItem?.footer?.['grand_total'] || '-'}
                                             </Text>
                                             <Text style={{ flex: 1.1, fontSize: 14, color: colors.text }}>
-                                                <Text style={{ fontWeight: '600' }}>Total Obtain Marks:</Text> {examItem.footer?.['total_obtain_marks'] || '-'}
+                                                <Text style={{ fontWeight: '600' }}>Total Obtain Marks:</Text> {examItem?.footer?.['total_obtain_marks'] || '-'}
                                             </Text>
                                         </View>
 
                                         {/* Row 1: Percentage & Rank */}
                                         <View style={{ flexDirection: 'row', marginBottom: 4 }}>
                                             <Text style={{ flex: 0.9, fontSize: 14, color: colors.text }}>
-                                                <Text style={{ fontWeight: '600' }}>Rank:</Text> {examItem.footer?.rank || '-'}
+                                                <Text style={{ fontWeight: '600' }}>Rank:</Text> {examItem?.footer?.rank || '-'}
                                             </Text>
                                             <Text style={{ flex: 1.1, fontSize: 14, color: colors.text }}>
-                                                <Text style={{ fontWeight: '600' }}>Percentage:</Text> {examItem.footer?.percentage || '-'}
+                                                <Text style={{ fontWeight: '600' }}>Percentage:</Text> {examItem?.footer?.percentage || '-'}
                                             </Text>
                                         </View>
 
                                         {/* Row 2: Result & Division */}
                                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                                             <Text style={{ flex: 0.9, fontSize: 14, color: colors.text }}>
-                                                <Text style={{ fontWeight: '600' }}>Division:</Text> {examItem.footer?.division || '-'}
+                                                <Text style={{ fontWeight: '600' }}>Division:</Text> {examItem?.footer?.division || '-'}
                                             </Text>
                                             <View style={{ flex: 1.1, flexDirection: 'row', alignItems: 'center' }}>
                                                 <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>Result:</Text>
                                                 <View style={{
-                                                    backgroundColor: examItem.footer?.result === 'Pass' ? Colors.green2 : Colors.red1,
+                                                    backgroundColor: examItem?.footer?.result === 'Pass' ? Colors.green2 : Colors.red1,
                                                     paddingHorizontal: 8,
                                                     paddingVertical: 2,
                                                     borderRadius: 4,
                                                     marginLeft: 8,
                                                 }}>
-                                                    <Text style={{ color: '#fff', fontSize: 13 }}>{examItem.footer?.result || '-'}</Text>
+                                                    <Text style={{ color: '#fff', fontSize: 13 }}>{examItem?.footer?.result || '-'}</Text>
                                                 </View>
                                             </View>
                                         </View>

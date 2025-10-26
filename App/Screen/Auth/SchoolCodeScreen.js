@@ -14,6 +14,7 @@ import {
     Animated,
     Easing,
     Dimensions,
+    ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,7 +32,6 @@ import { setDefultSetting } from '../../Redux/reducer/User';
 const { height: SCREEN_H } = Dimensions.get('window');
 
 const SchoolCodeScreen = () => {
-
     const navigation = useNavigation();
     const isFocused = useIsFocused();
     const insets = useSafeAreaInsets();
@@ -138,7 +138,7 @@ const SchoolCodeScreen = () => {
             Toast.show('School verified');
             navigation.replace('Login');
         } catch (err) {
-            console.error('School Code Error:', err);
+            // console.error('School Code Error:', err);
             setErrorText('Something went wrong. Please try again.');
             Toast.show('Something went wrong');
         } finally {
@@ -155,8 +155,15 @@ const SchoolCodeScreen = () => {
         if (isFocused) getSchoolCode();
     }, [isFocused]);
 
+    // Proper offset so the input stays above the keyboard
+    const keyboardVerticalOffset =
+        (Platform.OS === 'ios' ? (insets.top || 0) : 0) + 12;
+
+    // Make hero height a bit smaller on short screens so input has room
+    const HERO_HEIGHT = SCREEN_H < 700 ? SCREEN_H * 0.50 : SCREEN_H * 0.54;
+
     return (
-        <SafeAreaView style={[styles.safe, { paddingBottom: insets.bottom }]}>
+        <SafeAreaView style={[styles.safe]}>
             <StatusBar backgroundColor={Colors.black} barStyle="light-content" />
 
             {/* Soft background */}
@@ -167,70 +174,81 @@ const SchoolCodeScreen = () => {
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* HERO / TOP SECTION (taller, centered) */}
-            <LinearGradient
-                colors={['#314c61', '#314c61']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.header}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={keyboardVerticalOffset}
             >
-                <LinearGradient
-                    colors={['rgba(255,255,255,0.35)', 'transparent']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0.8 }}
-                    style={StyleSheet.absoluteFill}
-                />
-
-                {/* Centered floating image */}
-                <Animated.View style={{ transform: [{ translateY: float }] }}>
-                    <Image source={Images.schoolCode1} style={styles.heroImage} />
-                </Animated.View>
-                <Text style={styles.heroTitle}>Welcome</Text>
-                <Text style={styles.heroSubtitle}>Enter your school code to continue</Text>
-            </LinearGradient>
-
-            {/* BOTTOM / INPUT AREA (no card look) */}
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <View style={[styles.bottomArea, { paddingBottom: Math.max(16, insets.bottom) }]}>
-                    <View style={{ marginTop: 8 }}>
-                        <Text style={styles.label}>School Code</Text>
-                        <TextInput
-                            value={schoolCode}
-                            onChangeText={(t) => {
-                                setErrorText('');
-                                setSchoolCode(t.toUpperCase());
-                            }}
-                            placeholder="e.g. ABC123"
-                            placeholderTextColor="#9BA0A6"
-                            style={[styles.input, !!errorText && styles.inputError]}
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            returnKeyType="done"
-                            onSubmitEditing={verifySchoolCode}
-                            editable={!loading}
-                            accessibilityLabel="School code"
-                            maxLength={32}
-                        />
-                        {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
-                    </View>
-
-                    <TouchableOpacity
-                        onPress={verifySchoolCode}
-                        style={[styles.button, !canSubmit && styles.buttonDisabled]}
-                        activeOpacity={0.9}
-                        disabled={!canSubmit}
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}
+                >
+                    {/* HERO / TOP SECTION */}
+                    <LinearGradient
+                        colors={['#314c61', '#314c61']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[styles.header, { height: HERO_HEIGHT }]}
                     >
-                        {loading ? (
-                            <ActivityIndicator size="small" color={Colors.btnText || '#fff'} />
-                        ) : (
-                            <Text style={styles.buttonText}>Continue</Text>
-                        )}
-                    </TouchableOpacity>
+                        <LinearGradient
+                            colors={['rgba(255,255,255,0.35)', 'transparent']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0.8 }}
+                            style={StyleSheet.absoluteFill}
+                        />
 
-                    <Text style={styles.helper}>
-                        Don’t know it? Ask your administrator or check your welcome email.
-                    </Text>
-                </View>
+                        {/* Centered floating image */}
+                        <Animated.View style={{ transform: [{ translateY: float }] }}>
+                            <Image source={Images.schoolCode1} style={styles.heroImage} />
+                        </Animated.View>
+                        <Text style={styles.heroTitle}>Welcome</Text>
+                        <Text style={styles.heroSubtitle}>Enter your school code to continue</Text>
+                    </LinearGradient>
+
+                    {/* INPUT AREA */}
+                    <View style={[styles.bottomArea, { paddingBottom: Math.max(16, insets.bottom) }]}>
+                        <View style={{ marginTop: 8 }}>
+                            <Text style={styles.label}>School Code</Text>
+                            <TextInput
+                                value={schoolCode}
+                                onChangeText={(t) => {
+                                    setErrorText('');
+                                    setSchoolCode(t.toUpperCase());
+                                }}
+                                placeholder="e.g. ABC123"
+                                placeholderTextColor="#9BA0A6"
+                                style={[styles.input, !!errorText && styles.inputError]}
+                                autoCapitalize="characters"
+                                autoCorrect={false}
+                                returnKeyType="done"
+                                onSubmitEditing={verifySchoolCode}
+                                editable={!loading}
+                                accessibilityLabel="School code"
+                                maxLength={32}
+                            />
+                            {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={verifySchoolCode}
+                            style={[styles.button, !canSubmit && styles.buttonDisabled]}
+                            activeOpacity={0.9}
+                            disabled={!canSubmit}
+                        >
+                            {loading ? (
+                                <ActivityIndicator size="small" color={Colors.btnText || '#fff'} />
+                            ) : (
+                                <Text style={styles.buttonText}>Continue</Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <Text style={styles.helper}>
+                            Don’t know it? Ask your administrator or check your welcome email.
+                        </Text>
+                    </View>
+                </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -244,18 +262,17 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.white,
     },
 
-    /* HERO (taller, centered, big image) */
+    /* HERO */
     header: {
-        height: SCREEN_H * 0.60,  // taller section
         borderBottomLeftRadius: 32,
         borderBottomRightRadius: 32,
         paddingHorizontal: 24,
         overflow: 'hidden',
-        justifyContent: 'center',   // <--- center vertically
-        alignItems: 'center',       // <--- center horizontally
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     heroImage: {
-        width: 240,                           // bigger
+        width: 240,
         height: 240,
         resizeMode: 'contain',
         marginBottom: 12,
@@ -271,22 +288,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: '#fff',
         marginTop: 6,
-        // marginBottom: 20,
         fontSize: textSize(13),
     },
 
-    /* CLEAN BOTTOM AREA (no card) */
+    /* BOTTOM AREA */
     bottomArea: {
         flex: 1,
         paddingHorizontal: 24,
         paddingTop: 16,
-    },
-    tagline: {
-        textAlign: 'center',
-        color: '#111827',
-        fontWeight: '700',
-        fontSize: textSize(14),
-        marginBottom: 8,
     },
 
     label: {
@@ -317,7 +326,7 @@ const styles = StyleSheet.create({
     },
 
     button: {
-        marginTop: 16,
+        marginTop: 36,
         backgroundColor: '#314c61',
         paddingVertical: 15,
         borderRadius: 14,
@@ -335,5 +344,6 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         fontSize: textSize(12),
         marginTop: 15,
+        marginBottom: 12,
     },
 });
