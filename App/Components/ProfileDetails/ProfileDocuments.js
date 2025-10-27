@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable, Alert,PermissionsAndroid, Linking, Platform, ToastAndroid } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable, Alert, Linking, Platform, ToastAndroid } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { TextStyles } from '../../Constants/Fonts';

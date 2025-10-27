@@ -199,7 +199,7 @@ const Dashboard = () => {
     }
     getNotices();
     getSubjectsSections();
-    requestStoragePermission()
+    // requestStoragePermission()
     console.log("user Data", userData);
   }, [userData?.type]);
 

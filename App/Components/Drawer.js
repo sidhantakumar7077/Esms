@@ -18,7 +18,7 @@ import DeviceInfo from 'react-native-device-info';
 import UseApi from '../ApiConfig';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import RNFS from 'react-native-fs';
-import { requestStoragePermission } from '../Utils/Permission';
+// import { requestStoragePermission } from '../Utils/Permission';
 
 // const studentMenu = [
 //     { name: 'Dashboard', image: Images.home, onItemPress: () => { NavigationService.navigate('Home') } },
@@ -145,53 +145,53 @@ const DrawerContent = (props) => {
         }
     };
 
-    const downloadApk = async () => {
-        const granted = await requestStoragePermission();
-        if (!granted) {
-            Alert.alert('Permission Denied', 'Storage permission is required to download the update.');
-            return;
-        }
+    // const downloadApk = async () => {
+    //     const granted = await requestStoragePermission();
+    //     if (!granted) {
+    //         Alert.alert('Permission Denied', 'Storage permission is required to download the update.');
+    //         return;
+    //     }
 
-        const fileName = `app_update_${latestVersion}.apk`;
-        // const destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+    //     const fileName = `app_update_${latestVersion}.apk`;
+    //     // const destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
 
-        // Use DocumentDirectoryPath for better compatibility
-        let destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-        // For Android 11+ (API 30+), DownloadDirectoryPath may not be writable
-        if (Platform.OS === 'android' && Platform.Version >= 30) {
-            destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-        }
+    //     // Use DocumentDirectoryPath for better compatibility
+    //     let destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+    //     // For Android 11+ (API 30+), DownloadDirectoryPath may not be writable
+    //     if (Platform.OS === 'android' && Platform.Version >= 30) {
+    //         destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+    //     }
 
-        setIsDownloading(true); // Show the progress modal
+    //     setIsDownloading(true); // Show the progress modal
 
-        const downloadOptions = {
-            fromUrl: downloadUrl,
-            toFile: destPath,
-            progressDivider: 1,
-            begin: () => {
-                console.log('Download started');
-            },
-            progress: (res) => {
-                const progress = Math.floor((res.bytesWritten / res.contentLength) * 100);
-                setDownloadProgress(progress); // Update the progress state
-            },
-        };
+    //     const downloadOptions = {
+    //         fromUrl: downloadUrl,
+    //         toFile: destPath,
+    //         progressDivider: 1,
+    //         begin: () => {
+    //             console.log('Download started');
+    //         },
+    //         progress: (res) => {
+    //             const progress = Math.floor((res.bytesWritten / res.contentLength) * 100);
+    //             setDownloadProgress(progress); // Update the progress state
+    //         },
+    //     };
 
-        RNFS.downloadFile(downloadOptions)
-            .promise.then(res => {
-                setIsDownloading(false); // Hide the progress modal
-                if (res.statusCode === 200) {
-                    Alert.alert('Download Complete', `APK saved to Downloads folder as ${fileName}`);
-                } else {
-                    Alert.alert('Failed', 'Download failed. Try again.');
-                }
-            })
-            .catch(err => {
-                setIsDownloading(false); // Hide the progress modal
-                console.error('Download error:', err);
-                Alert.alert('Error', `${err.message || err}`);
-            });
-    };
+    //     RNFS.downloadFile(downloadOptions)
+    //         .promise.then(res => {
+    //             setIsDownloading(false); // Hide the progress modal
+    //             if (res.statusCode === 200) {
+    //                 Alert.alert('Download Complete', `APK saved to Downloads folder as ${fileName}`);
+    //             } else {
+    //                 Alert.alert('Failed', 'Download failed. Try again.');
+    //             }
+    //         })
+    //         .catch(err => {
+    //             setIsDownloading(false); // Hide the progress modal
+    //             console.error('Download error:', err);
+    //             Alert.alert('Error', `${err.message || err}`);
+    //         });
+    // };
 
     useEffect(() => {
         checkForVersionUpdate();

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   View,
-  PermissionsAndroid,
   Platform,
   Alert,
 } from 'react-native';
