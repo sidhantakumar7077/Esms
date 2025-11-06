@@ -5,6 +5,7 @@ import { View, Text, StyleSheet } from 'react-native';
 // import Profile from '../Components/Profile';
 import DrawerNav from './Drawer';
 // import AdmissionList from '../Screen/Admission/AdmissionList';
+import Payment from '../payments/Payment';
 
 const Stack = createStackNavigator();
 // create a component
@@ -21,6 +22,7 @@ const AppStack = () => {
             }}
         >
             <Stack.Screen name="DrawerNav" component={DrawerNav} />
+            <Stack.Screen name="Payment" component={Payment} options={{ title: 'Pay' }} />
             {/* <Stack.Screen name="AdmissionList" component={AdmissionList} /> */}
            
         </Stack.Navigator>
