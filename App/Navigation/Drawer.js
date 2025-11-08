@@ -25,6 +25,7 @@ import ExamResult from '../Screen/Examination/ExamResult';
 import ExamSchedule from '../Screen/Examination/ExamSchedule';
 import TransportRoutes from '../Screen/TransportRoutes';
 import LocationTracking from '../Screen/LocationTracking/Index';
+import LocationTrackingByDevice from '../Screen/LocationTracking/LocationTrackingByDevice';
 import TransportMap from '../Components/TransportMap';
 import MyStudents from '../Screen/MyStudents';
 import TeacherReview from '../Screen/TeacherReview';
@@ -90,6 +91,7 @@ const DrawerNav = ({ navigation }) => {
             <Drawer.Screen name="ExamSchedule" component={ExamSchedule} />
             <Drawer.Screen name="TransportRoutes" component={TransportRoutes} />
             <Drawer.Screen name="LocationTracking" component={LocationTracking} />
+            <Drawer.Screen name="LocationTrackingByDevice" component={LocationTrackingByDevice} />
             <Drawer.Screen name="TransportMap" component={TransportMap} />
             <Drawer.Screen name="MyStudents" component={MyStudents} />
             <Drawer.Screen name="TeacherReview" component={TeacherReview} />

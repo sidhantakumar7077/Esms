@@ -172,11 +172,11 @@ const TransportRoutes = () => {
                         </View>
                     </View>
                     {/* View My location button */}
-                    {/* <View style={{ ...appStyles.card, paddingVertical: 10, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
-                        <TouchableOpacity style={{ ...styles.btn, backgroundColor: colors.text }} onPress={() => navigation.navigate('LocationTracking')}>
-                            <Text style={{ color: colors.background, fontSize: 17 }}>View My Location</Text>
+                    <View style={{ ...appStyles.card, paddingVertical: 10, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                        <TouchableOpacity style={{ ...styles.btn, backgroundColor: colors.text }} onPress={() => navigation.navigate('LocationTrackingByDevice')}>
+                            <Text style={{ color: colors.background, fontSize: 17 }}>View Bus Location</Text>
                         </TouchableOpacity>
-                    </View> */}
+                    </View>
 
                     {/* {userData?.type == 'driver' && <View style={appStyles.card}>
                         <View style={{ flexDirection: 'row', columnGap: 5, paddingHorizontal: 10 }}>
