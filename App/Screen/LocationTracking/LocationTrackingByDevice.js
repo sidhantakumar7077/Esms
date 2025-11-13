@@ -1,5 +1,5 @@
 // src/screens/LocationTrackingByDevice.js
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     StatusBar,
@@ -12,13 +12,16 @@ import MapView, {
     Marker,
     PROVIDER_GOOGLE,
     Circle,
+    AnimatedRegion,
 } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GOOGLE_MAPS_APIKEY } from "../../../App";
+import { GOOGLE_MAPS_APIKEY } from '../../../App';
+
+import BusIcon from '../../Assets/Images/bus.png';
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const IMEI = '359097370181391';
@@ -49,6 +52,21 @@ const LocationTrackingByDevice = () => {
 
     const intervalRef = useRef(null);
     const controllersRef = useRef(new Set()); // AbortController instances
+
+    // Single AnimatedRegion instance to avoid re-mounting marker (blinking)
+    const busPositionRef = useRef(
+        new AnimatedRegion({
+            latitude: 0,
+            longitude: 0,
+            latitudeDelta: 0.012,
+            longitudeDelta: 0.012,
+        })
+    );
+    const [hasBusPosition, setHasBusPosition] = useState(false);
+
+    // movement direction (forward/backward)
+    const prevPosRef = useRef(null);
+    const [isForward, setIsForward] = useState(true);
 
     const region = useMemo(() => {
         if (lat == null || lng == null) return null;
@@ -96,6 +114,31 @@ const LocationTrackingByDevice = () => {
                 : [],
         [fences]
     );
+
+    // determine if bus is moving forward or backward along the route
+    useEffect(() => {
+        if (lat == null || lng == null || !startFence || !endFence) return;
+
+        const current = { lat, lng };
+        const prev = prevPosRef.current;
+        prevPosRef.current = current;
+
+        if (!prev) return;
+
+        const moveLat = current.lat - prev.lat;
+        const moveLng = current.lng - prev.lng;
+        if (moveLat === 0 && moveLng === 0) return;
+
+        const routeLat = endFence.lat - startFence.lat;
+        const routeLng = endFence.lng - startFence.lng;
+
+        const dot = moveLat * routeLat + moveLng * routeLng;
+
+        if (!Number.isNaN(dot)) {
+            // dot >= 0 => moving roughly from start towards end (forward)
+            setIsForward(dot >= 0);
+        }
+    }, [lat, lng, startFence, endFence]);
 
     // ─── helpers to manage AbortControllers ─────────────────────────────────────
     const makeController = () => {
@@ -186,6 +229,26 @@ const LocationTrackingByDevice = () => {
             setLng(lngNum);
             setAddr(data?.address || null);
             setUpdatedAt(data?.gpsTime || null);
+
+            // smooth bus animation without recreating AnimatedRegion (avoids blinking)
+            if (!hasBusPosition) {
+                busPositionRef.current.setValue({
+                    latitude: latNum,
+                    longitude: lngNum,
+                    latitudeDelta: 0.012,
+                    longitudeDelta: 0.012,
+                });
+                setHasBusPosition(true);
+            } else {
+                busPositionRef.current
+                    .timing({
+                        latitude: latNum,
+                        longitude: lngNum,
+                        duration: 800,
+                        useNativeDriver: false,
+                    })
+                    .start();
+            }
         } catch (e) {
             if (axios.isCancel(e)) return;
             const status = e?.response?.status;
@@ -206,15 +269,26 @@ const LocationTrackingByDevice = () => {
 
                 try {
                     const bootCtrl = makeController();
+
+                    // 1) get token
                     const tk = await fetchToken(bootCtrl.signal);
-                    await Promise.all([fetchFences(tk, bootCtrl.signal), fetchLive(tk, bootCtrl.signal)]);
+
+                    // 2) in parallel: fetch fences + live location
+                    await Promise.all([
+                        fetchFences(tk, bootCtrl.signal),
+                        fetchLive(tk, bootCtrl.signal),
+                    ]);
+
                     releaseController(bootCtrl);
                 } catch (e) {
-                    if (!axios.isCancel(e)) setError(e?.message || 'Initialization failed');
+                    if (!axios.isCancel(e)) {
+                        setError(e?.message || 'Initialization failed');
+                    }
                 } finally {
                     if (isActive) setLoading(false);
                 }
 
+                // periodic refresh (live only)
                 intervalRef.current = setInterval(async () => {
                     try {
                         const loopCtrl = makeController();
@@ -344,9 +418,11 @@ const LocationTrackingByDevice = () => {
                             style={styles.map}
                             initialRegion={mapInitial}
                             provider={PROVIDER_GOOGLE}
+                            // maxZoomLevel={16}
+                            // minZoomLevel={10}
                         >
                             {/* Road-snapped route */}
-                            {startFence && endFence && GOOGLE_MAPS_APIKEY !== 'YOUR_GOOGLE_MAPS_API_KEY' && (
+                            {startFence && endFence && GOOGLE_MAPS_APIKEY && (
                                 <MapViewDirections
                                     origin={{ latitude: startFence.lat, longitude: startFence.lng }}
                                     destination={{ latitude: endFence.lat, longitude: endFence.lng }}
@@ -390,22 +466,19 @@ const LocationTrackingByDevice = () => {
                                 </Marker>
                             )}
 
-                            {/* Live bus marker */}
-                            {!!region && (
-                                <Marker
-                                    coordinate={{ latitude: region.latitude, longitude: region.longitude }}
-                                    anchor={{ x: 0.5, y: 1 }}
-                                >
-                                    <View style={styles.busMarkerWrapper}>
-                                        <View style={styles.busMarkerBubble}>
-                                            <Text style={styles.busMarkerEmoji}>🚌</Text>
-                                        </View>
-                                        <View style={styles.busMarkerPointer} />
-                                    </View>
-                                </Marker>
+                            {/* Live bus marker (animated + direction-aware, non-blinking) */}
+                            {hasBusPosition && (
+                                <Marker.Animated
+                                    coordinate={busPositionRef.current}
+                                    anchor={{ x: 0.5, y: 0.5 }}
+                                    flat
+                                    rotation={isForward ? 0 : 180}
+                                    image={BusIcon}
+                                    tracksViewChanges={false}
+                                />
                             )}
 
-                            {/* Optional: keep geofence radius but softer */}
+                            {/* Geofence circles */}
                             {fences.map((f) => (
                                 <Circle
                                     key={`fence-${f.id}`}
@@ -475,14 +548,20 @@ const styles = StyleSheet.create({
 
     body: { flex: 1 },
 
-    mapContainer: { flex: 1, backgroundColor: '#e5e7eb', overflow: 'hidden' },
+    mapContainer: { flex: 1.2, backgroundColor: '#e5e7eb', overflow: 'hidden' },
     map: { flex: 1 },
-    loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6', gap: 10 },
+    loading: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
+        gap: 10,
+    },
     loadingText: { color: '#4b5563' },
 
     // bottom sheet
     listContainer: {
-        flex: 1,
+        flex: 0.9,
         backgroundColor: '#ffffff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
@@ -518,8 +597,10 @@ const styles = StyleSheet.create({
 
     stopListContent: { paddingTop: 6, paddingBottom: 4 },
 
-    // timeline column
-    stopRow: { flexDirection: 'row', marginBottom: 10 },
+    // timeline column (continuous lines)
+    stopRow: {
+        flexDirection: 'row',
+    },
     timelineCol: { width: 32, alignItems: 'center' },
     timelineLine: { width: 2, flex: 1, backgroundColor: '#e5e7eb' },
     timelineLinePast: { backgroundColor: '#22c55e' },
@@ -560,6 +641,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderWidth: 1,
         borderColor: '#e5e7eb',
+        marginVertical: 6,
     },
     stopCardHeader: {
         flexDirection: 'row',
@@ -584,44 +666,14 @@ const styles = StyleSheet.create({
 
     error: { color: '#b91c1c', marginTop: 4, fontSize: 12 },
 
-    // bus marker on map
-    busMarkerWrapper: {
-        alignItems: 'center',
-    },
-    busMarkerBubble: {
-        backgroundColor: '#f97316',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 999,
-        shadowColor: '#000',
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 4,
-    },
-    busMarkerEmoji: {
-        fontSize: 18,
-        color: '#ffffff',
-    },
-    busMarkerPointer: {
-        width: 0,
-        height: 0,
-        marginTop: -1,
-        borderLeftWidth: 6,
-        borderRightWidth: 6,
-        borderTopWidth: 8,
-        borderLeftColor: 'transparent',
-        borderRightColor: 'transparent',
-        borderTopColor: '#f97316',
-    },
-
     // start/end pins
     pinWrapper: {
         alignItems: 'center',
     },
     pinCircle: {
-        padding: 6,
-        borderRadius: 13,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 999,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -634,7 +686,7 @@ const styles = StyleSheet.create({
     pinCircleText: {
         color: '#ffffff',
         fontWeight: '700',
-        fontSize: 13,
+        fontSize: 12,
     },
     pinPointer: {
         width: 0,
