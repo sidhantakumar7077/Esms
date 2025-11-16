@@ -21,7 +21,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GOOGLE_MAPS_APIKEY } from '../../../App';
 
-import BusIcon from '../../Assets/Images/bus.png';
+// import BusIcon from '../../Assets/Images/bus.png';
+import BusIcon from '../../Assets/Images/cab.png';
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const IMEI = '359097370181391';
@@ -30,6 +31,35 @@ const AUTH_URL = 'https://esmsv2.scriptlab.in/api/live-location/generate-locatio
 const FENCE_URL = 'https://esmsv2.scriptlab.in/api/live-location/get-fence-list';
 const LIVE_URL = 'https://open.iopgps.com/api/device/location';
 // ──────────────────────────────────────────────────────────────────────────────
+
+// Helpers: bearing + distance
+const toRad = (d) => (d * Math.PI) / 180;
+const toDeg = (r) => (r * 180) / Math.PI;
+// Bearing from (lat1,lng1) -> (lat2,lng2), in degrees [0..360)
+function bearingBetween(lat1, lng1, lat2, lng2) {
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δλ = toRad(lng2 - lng1);
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x =
+        Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    const θ = Math.atan2(y, x);
+    const deg = (toDeg(θ) + 360) % 360;
+    return deg;
+}
+// Rough haversine distance in meters (for jitter guard)
+function haversineMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // meters
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1);
+    const Δλ = toRad(lon2 - lon1);
+    const a =
+        Math.sin(Δφ / 2) ** 2 +
+        Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
 
 const LocationTrackingByDevice = () => {
     const insets = useSafeAreaInsets();
@@ -64,9 +94,9 @@ const LocationTrackingByDevice = () => {
     );
     const [hasBusPosition, setHasBusPosition] = useState(false);
 
-    // movement direction (forward/backward)
+    // Heading the marker should face (degrees from north)
+    const [headingDeg, setHeadingDeg] = useState(0);
     const prevPosRef = useRef(null);
-    const [isForward, setIsForward] = useState(true);
 
     const region = useMemo(() => {
         if (lat == null || lng == null) return null;
@@ -114,31 +144,6 @@ const LocationTrackingByDevice = () => {
                 : [],
         [fences]
     );
-
-    // determine if bus is moving forward or backward along the route
-    useEffect(() => {
-        if (lat == null || lng == null || !startFence || !endFence) return;
-
-        const current = { lat, lng };
-        const prev = prevPosRef.current;
-        prevPosRef.current = current;
-
-        if (!prev) return;
-
-        const moveLat = current.lat - prev.lat;
-        const moveLng = current.lng - prev.lng;
-        if (moveLat === 0 && moveLng === 0) return;
-
-        const routeLat = endFence.lat - startFence.lat;
-        const routeLng = endFence.lng - startFence.lng;
-
-        const dot = moveLat * routeLat + moveLng * routeLng;
-
-        if (!Number.isNaN(dot)) {
-            // dot >= 0 => moving roughly from start towards end (forward)
-            setIsForward(dot >= 0);
-        }
-    }, [lat, lng, startFence, endFence]);
 
     // ─── helpers to manage AbortControllers ─────────────────────────────────────
     const makeController = () => {
@@ -225,6 +230,17 @@ const LocationTrackingByDevice = () => {
             const lngNum = Number(data?.lng);
             if (!isFinite(latNum) || !isFinite(lngNum)) throw new Error(`Bad coordinates: lat=${data?.lat} lng=${data?.lng}`);
 
+            // Compute heading from previous to current (with small movement guard)
+            const prev = prevPosRef.current;
+            if (prev && Number.isFinite(prev.lat) && Number.isFinite(prev.lng)) {
+                const moved = haversineMeters(prev.lat, prev.lng, latNum, lngNum);
+                if (moved > 5) { // ignore micro-jitter under ~5m
+                    const brg = bearingBetween(prev.lat, prev.lng, latNum, lngNum);
+                    setHeadingDeg(brg);
+                }
+            }
+            prevPosRef.current = { lat: latNum, lng: lngNum };
+
             setLat(latNum);
             setLng(lngNum);
             setAddr(data?.address || null);
@@ -273,7 +289,7 @@ const LocationTrackingByDevice = () => {
                     // 1) get token
                     const tk = await fetchToken(bootCtrl.signal);
 
-                    // 2) in parallel: fetch fences + live location
+                    // 2) in parallel: fetch fences + live location (faster first paint)
                     await Promise.all([
                         fetchFences(tk, bootCtrl.signal),
                         fetchLive(tk, bootCtrl.signal),
@@ -418,8 +434,6 @@ const LocationTrackingByDevice = () => {
                             style={styles.map}
                             initialRegion={mapInitial}
                             provider={PROVIDER_GOOGLE}
-                            // maxZoomLevel={16}
-                            // minZoomLevel={10}
                         >
                             {/* Road-snapped route */}
                             {startFence && endFence && GOOGLE_MAPS_APIKEY && (
@@ -466,13 +480,13 @@ const LocationTrackingByDevice = () => {
                                 </Marker>
                             )}
 
-                            {/* Live bus marker (animated + direction-aware, non-blinking) */}
+                            {/* Live bus marker (animated + heading-based rotation, non-blinking) */}
                             {hasBusPosition && (
                                 <Marker.Animated
                                     coordinate={busPositionRef.current}
                                     anchor={{ x: 0.5, y: 0.5 }}
                                     flat
-                                    rotation={isForward ? 0 : 180}
+                                    rotation={headingDeg}     // 👈 faces movement direction
                                     image={BusIcon}
                                     tracksViewChanges={false}
                                 />

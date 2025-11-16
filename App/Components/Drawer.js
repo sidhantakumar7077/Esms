@@ -68,6 +68,7 @@ const DrawerContent = (props) => {
             { name: 'Download Center', image: Images.directDownload, onItemPress: () => NavigationService.navigate('DownloadCenter') },
             { name: 'Teacher Review', image: Images.ratingBlank, onItemPress: () => NavigationService.navigate('TeacherReview') },
             { name: 'Examination', image: Images.examination, onItemPress: () => NavigationService.navigate('Examination') },
+            { name: 'Video Tutorial', image: Images.zoom, onItemPress: () => NavigationService.navigate('VideoTutorial') },
         ];
         let driverMenu = [
             { name: 'Dashboard', image: Images.home, onItemPress: () => { NavigationService.navigate('Home') } },
