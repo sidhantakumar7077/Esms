@@ -7,6 +7,7 @@ import {
     Text,
     View,
     FlatList,
+    TouchableOpacity,
 } from 'react-native';
 import MapView, {
     Marker,
@@ -20,6 +21,7 @@ import { useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GOOGLE_MAPS_APIKEY } from '../../../App';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 // import BusIcon from '../../Assets/Images/bus.png';
 import BusIcon from '../../Assets/Images/cab.png';
@@ -97,6 +99,9 @@ const LocationTrackingByDevice = () => {
     // Heading the marker should face (degrees from north)
     const [headingDeg, setHeadingDeg] = useState(0);
     const prevPosRef = useRef(null);
+
+    // open/close state for list section
+    const [isListOpen, setIsListOpen] = useState(true);
 
     const region = useMemo(() => {
         if (lat == null || lng == null) return null;
@@ -426,8 +431,8 @@ const LocationTrackingByDevice = () => {
             <StatusBar barStyle="dark-content" />
 
             <View style={styles.body}>
-                {/* Top 50% – Map */}
-                <View style={styles.mapContainer}>
+                {/* Top – Map (expands when list is closed) */}
+                <View style={[styles.mapContainer, !isListOpen && styles.mapContainerExpanded]}>
                     {mapInitial ? (
                         <MapView
                             ref={(r) => (mapRef.current = r)}
@@ -519,32 +524,49 @@ const LocationTrackingByDevice = () => {
                     )}
                 </View>
 
-                {/* Bottom 50% – route list */}
-                <View style={styles.listContainer}>
-                    <View style={styles.sheetHandle} />
-
-                    <View style={styles.routeHeader}>
-                        <View style={styles.routeTitleRow}>
-                            <Text style={styles.routeNumber}>Route</Text>
-                            <View style={styles.routeBadge}>
-                                <Text style={styles.routeBadgeText}>{fences.length || 0} Stops</Text>
-                            </View>
-                        </View>
-
-                        <Text style={styles.routeDirection} numberOfLines={1}>
-                            {startName}  ➜  {endName}
-                        </Text>
+                {/* Bottom – route list (collapsible) */}
+                <View style={[styles.listContainer, !isListOpen && styles.listContainerCollapsed]}>
+                    {/* Toggle icon (replaces sheetHandle) */}
+                    <View style={styles.listToggleRow}>
+                        <TouchableOpacity
+                            onPress={() => setIsListOpen((prev) => !prev)}
+                            activeOpacity={0.7}
+                            style={styles.toggleButton}
+                        >
+                            <Icon
+                                name={isListOpen ? 'keyboard-arrow-down' : 'keyboard-arrow-up'}
+                                size={22}
+                                color="#4b5563"
+                            />
+                        </TouchableOpacity>
                     </View>
 
-                    <FlatList
-                        data={fences}
-                        keyExtractor={(item) => String(item.id)}
-                        renderItem={renderStop}
-                        contentContainerStyle={styles.stopListContent}
-                        showsVerticalScrollIndicator={false}
-                    />
+                    {isListOpen && (
+                        <>
+                            <View style={styles.routeHeader}>
+                                <View style={styles.routeTitleRow}>
+                                    <Text style={styles.routeNumber}>Route</Text>
+                                    <View style={styles.routeBadge}>
+                                        <Text style={styles.routeBadgeText}>{fences.length || 0} Stops</Text>
+                                    </View>
+                                </View>
 
-                    {!!error && <Text style={styles.error}>{error}</Text>}
+                                <Text style={styles.routeDirection} numberOfLines={1}>
+                                    {startName}  ➜  {endName}
+                                </Text>
+                            </View>
+
+                            <FlatList
+                                data={fences}
+                                keyExtractor={(item) => String(item.id)}
+                                renderItem={renderStop}
+                                contentContainerStyle={styles.stopListContent}
+                                showsVerticalScrollIndicator={false}
+                            />
+
+                            {!!error && <Text style={styles.error}>{error}</Text>}
+                        </>
+                    )}
                 </View>
             </View>
         </View>
@@ -563,6 +585,7 @@ const styles = StyleSheet.create({
     body: { flex: 1 },
 
     mapContainer: { flex: 1.2, backgroundColor: '#e5e7eb', overflow: 'hidden' },
+    mapContainerExpanded: { flex: 1.8 },       // 👈 when list is closed
     map: { flex: 1 },
     loading: {
         flex: 1,
@@ -588,13 +611,29 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -2 },
         elevation: 8,
     },
-    sheetHandle: {
-        width: 40,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: '#d1d5db',
-        alignSelf: 'center',
-        marginBottom: 8,
+    listContainerCollapsed: {
+        flex: 0.10,         // 👈 when collapsed
+        // paddingBottom: 6,
+    },
+
+    // NEW: toggle button row
+    listToggleRow: {
+        alignItems: 'center',
+        // marginBottom: 4,
+    },
+    toggleButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb',
+    },
+    toggleIcon: {
+        fontSize: 18,
+        color: '#4b5563',
     },
 
     routeHeader: { marginBottom: 8 },
