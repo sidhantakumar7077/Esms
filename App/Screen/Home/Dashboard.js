@@ -27,6 +27,7 @@ import RenderHtml from 'react-native-render-html';
 import { useTheme } from '@react-navigation/native';
 import { FlatList } from 'react-native-gesture-handler';
 import { requestStoragePermission } from '../../Utils/Permission';
+import ChangePasswordModal from '../../Components/ChangePasswordModal';
 
 let Elearnings = [
   {
@@ -174,6 +175,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [notices, setNotices] = useState([]);
   const [userMenu, setUserMenu] = useState([]);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   // const shakeAnimation = useRef(new Animated.Value(0)).current;
   const scaleAnimation = useRef(new Animated.Value(1)).current;
   const rotationAnimation = useRef(new Animated.Value(0)).current;
@@ -332,8 +334,9 @@ const Dashboard = () => {
           />
         </Pressable> */}
         <TouchableOpacity
-          // onPress={() => NavigationService.navigate('NoticeBoard')}
-          onPress={shakeBell}>
+          onPress={() => setShowChangePassword(true)}
+        // onPress={shakeBell}
+        >
           {/* <Image
                         source={Images.notificationBell}
                         style={{
@@ -346,7 +349,7 @@ const Dashboard = () => {
             // style={{ transform: [{ translateX: shakeAnimation }] }}
             style={{ transform: [{ scale: scaleAnimation }, { rotate: spin }] }}>
             <Image
-              source={Images.notificationBell}
+              source={Images.padlock}
               style={{
                 height: 30,
                 width: 30,
@@ -693,6 +696,11 @@ const Dashboard = () => {
                     })}
                 </View>
               </View>
+              {/* Change Password Modal */}
+              <ChangePasswordModal
+                visible={showChangePassword}
+                onClose={() => setShowChangePassword(false)}
+              />
             </ScrollView>
           )}
 

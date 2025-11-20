@@ -46,7 +46,7 @@ import RNFS from 'react-native-fs';
 const DrawerContent = (props) => {
 
     const dispatch = useDispatch()
-    const { userData, appSetting } = useSelector(state => state.User);
+    const { userData, appSetting, defultSetting } = useSelector(state => state.User);
     const [userMenu, setUserMenu] = useState([]);
     const { colors } = useTheme();
 
@@ -68,7 +68,7 @@ const DrawerContent = (props) => {
             { name: 'Download Center', image: Images.directDownload, onItemPress: () => NavigationService.navigate('DownloadCenter') },
             { name: 'Teacher Review', image: Images.ratingBlank, onItemPress: () => NavigationService.navigate('TeacherReview') },
             { name: 'Examination', image: Images.examination, onItemPress: () => NavigationService.navigate('Examination') },
-            { name: 'Video Tutorial', image: Images.zoom, onItemPress: () => NavigationService.navigate('VideoTutorial') },
+            ...(defultSetting.is_video_tutorial === '1' ? [{ name: 'Video Tutorial', image: Images.zoom, onItemPress: () => NavigationService.navigate('VideoTutorial') }] : [])
         ];
         let driverMenu = [
             { name: 'Dashboard', image: Images.home, onItemPress: () => { NavigationService.navigate('Home') } },
@@ -196,7 +196,7 @@ const DrawerContent = (props) => {
 
     useEffect(() => {
         checkForVersionUpdate();
-        // console.log("userData", userData);
+        // console.log("userData", defultSetting);
     }, []);
 
     // const getLocalData = async ()=>{
