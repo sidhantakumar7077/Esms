@@ -19,8 +19,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const { width } = Dimensions.get('window');
 
-// 🔹 Responsive layout: 1 column on small screens, 2 on larger
-const NUM_COLUMNS = width < 420 ? 1 : 2;
+// ✅ always 2 items per row
+const NUM_COLUMNS = 2;
 const CARD_MARGIN = 14;
 const CARD_WIDTH =
   (width - CARD_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
@@ -40,28 +40,11 @@ const isImageUrl = url => {
   return /\.(png|jpe?g|gif|webp|bmp)$/i.test(clean);
 };
 
-const getVideoTypeMeta = type => {
-  const t = String(type || '1');
-  if (t === '2') {
-    return {
-      label: 'YouTube',
-      icon: 'ondemand-video',
-      bg: 'rgba(248, 113, 113, 0.12)',
-      color: '#b91c1c',
-    };
-  }
-  return {
-    label: 'Offline',
-    icon: 'play-circle-outline',
-    bg: 'rgba(34, 197, 94, 0.12)',
-    color: '#15803d',
-  };
-};
-
 const Index = ({ navigation }) => {
-
+  
   const { userData } = useSelector(state => state.User);
   const { colors } = useTheme();
+
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -112,26 +95,16 @@ const Index = ({ navigation }) => {
   }, []);
 
   const renderItem = ({ item }) => {
-    const typeMeta = getVideoTypeMeta(item.video_type);
-
     let thumbnailUrl = null;
     if (isImageUrl(item.thumbnail)) thumbnailUrl = item.thumbnail;
 
     return (
       <TouchableOpacity
-        style={[
-          styles.card,
-          NUM_COLUMNS === 1 && { width: '100%' }, // full width on small screens
-        ]}
+        style={styles.card}
         activeOpacity={0.9}
         onPress={() => navigation.navigate('VideoPlayer', { video: item })}
       >
-        <LinearGradient
-          colors={['#ffffff', '#f2fff8']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.cardInner}
-        >
+        <View style={styles.cardInner}>
           {/* Thumbnail */}
           <View style={styles.thumbnailWrapper}>
             <Image
@@ -141,27 +114,24 @@ const Index = ({ navigation }) => {
             />
           </View>
 
-          {/* Text */}
+          {/* Title */}
           <Text numberOfLines={2} style={styles.title}>
             {item.title || 'Untitled'}
           </Text>
 
-          <View style={styles.cardFooterRow}>
-            {item.date ? (
-              <View style={styles.dateRow}>
-                <Icon
-                  name="event"
-                  size={13}
-                  color="#9ca3af"
-                  style={{ marginRight: 4 }}
-                />
-                <Text style={styles.dateText}>{item.date}</Text>
-              </View>
-            ) : (
-              <View />
-            )}
-          </View>
-        </LinearGradient>
+          {/* Date row */}
+          {item.date ? (
+            <View style={styles.dateRow}>
+              <Icon
+                name="event"
+                size={13}
+                color="#9ca3af"
+                style={{ marginRight: 4 }}
+              />
+              <Text style={styles.dateText}>{item.date}</Text>
+            </View>
+          ) : null}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -225,14 +195,12 @@ const Index = ({ navigation }) => {
       <View style={styles.listContainer}>
         <FlatList
           data={videos}
-          key={NUM_COLUMNS} // force re-render if columns change
+          key={NUM_COLUMNS}
           keyExtractor={(item, index) =>
             item.id?.toString() || item.video_id?.toString() || String(index)
           }
           numColumns={NUM_COLUMNS}
-          columnWrapperStyle={
-            NUM_COLUMNS > 1 ? styles.row : null
-          }
+          columnWrapperStyle={styles.row}
           renderItem={renderItem}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -247,6 +215,7 @@ const Index = ({ navigation }) => {
               </Text>
             )
           }
+          showsVerticalScrollIndicator={false}
         />
       </View>
     </View>
@@ -319,79 +288,53 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: CARD_MARGIN,
     paddingTop: 4,
+    paddingBottom: 16,
   },
   row: {
     justifyContent: 'space-between',
-    marginBottom: CARD_MARGIN,
+    // marginBottom: CARD_MARGIN,
   },
   card: {
     width: CARD_WIDTH,
     borderRadius: 20,
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 3,
-    backgroundColor: 'transparent',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
     marginBottom: CARD_MARGIN,
   },
   cardInner: {
     borderRadius: 20,
-    padding: 12,
+    // padding: 10,
   },
   thumbnailWrapper: {
-    borderRadius: 18,
+    borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#dfe6e9',
   },
   thumbnail: {
     width: '100%',
-    height: NUM_COLUMNS === 1 ? 160 : 120, // taller when single column
-  },
-  playOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: 110,
   },
   title: {
     marginTop: 10,
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: 14,
     color: '#111827',
-  },
-  cardFooterRow: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 8,
   },
   dateRow: {
+    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   dateText: {
     fontSize: 11,
     color: '#6b7280',
-  },
-  typePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  typePillText: {
-    fontSize: 11,
-    fontWeight: '600',
   },
 
   /* States */
