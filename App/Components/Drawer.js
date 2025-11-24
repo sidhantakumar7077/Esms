@@ -23,11 +23,11 @@ import RNFS from 'react-native-fs';
 // const studentMenu = [
 //     { name: 'Dashboard', image: Images.home, onItemPress: () => { NavigationService.navigate('Home') } },
 //     { name: 'Profile', image: Images.profile, onItemPress: () => { NavigationService.navigate('Profile')}},
-//     { name: 'Homework', image: Images.homework, onItemPress: () => { NavigationService.navigate('Homework') } },
+//     { name: 'Homework', image: Images.homework, onItemPress: () => NavigationService.navigate('Homework') },
 //     { name: 'Daily Assignment', image: Images.assignment, onItemPress: () => NavigationService.navigate('DailyAssignment') },
 //     { name: 'Lesson Plan', image: Images.lessonPlan3, onItemPress: () => NavigationService.navigate('LessonPlan') },
 //     { name: 'Class Timetable', image: Images.timetable, onItemPress: () => NavigationService.navigate('ClassTimeTable') },
-//     { name: 'Attendance', image: Images.attendance, onItemPress: () => NavigationService.navigate('Attendance') },
+//     { name: 'Attendance', image: Images.attendance, onItemPress:()=>NavigationService.navigate('Attendance') },
 //     { name: 'Notice Board', image: Images.noticeboard, onItemPress: () => NavigationService.navigate('NoticeBoard') },
 //     { name: 'Fees', image: Images.fees, onItemPress: () => NavigationService.navigate('FeesDetails') },
 //     // { name: 'Transport', image: Images.car, onItemPress: () => NavigationService.navigate('TransportRoutes') },
@@ -39,7 +39,7 @@ import RNFS from 'react-native-fs';
 //     { name: 'Dashboard', image: Images.home, onItemPress: () => { NavigationService.navigate('Home') } },
 //     { name: 'Profile', image: Images.profile, onItemPress: () => { NavigationService.navigate('Profile') } },
 //     { name: 'Transport', image: Images.car, onItemPress: () => NavigationService.navigate('TransportRoutes') },
-//     { name: 'My Students', image: Images.carStudent, onItemPress: () => null },
+//     { name: 'My Students', image: Images.carStudent, onItemPress: () => NavigationService.navigate('MyStudents') },
 //     // { name: 'Logout', image: Images.logout, onItemPress: () => NavigationService.navigate('AuthStack') },
 // ];
 
@@ -50,40 +50,87 @@ const DrawerContent = (props) => {
     const [userMenu, setUserMenu] = useState([]);
     const { colors } = useTheme();
 
+    // Local fallback file (you requested the uploaded file path be used)
+    const LOCAL_FALLBACK_ICON = 'react_native_logo.png';
+
+    // MASTER list of all possible menu items and the route they map to
+    const allMenuItems = [
+        { name: 'Dashboard', image: Images.home, route: 'Home' },
+        { name: 'Profile', image: Images.profile, route: 'Profile' },
+        { name: 'Homework', image: Images.homework, route: 'Homework' },
+        { name: 'Daily Assignment', image: Images.dailyAssignment, route: 'DailyAssignment' },
+        { name: 'Lesson Plan', image: Images.lessonPlan3, route: 'LessonPlan' },
+        { name: 'Class Timetable', image: Images.timetable, route: 'ClassTimeTable' },
+        { name: 'Attendance', image: Images.attendance, route: 'Attendance' },
+        { name: 'Notice Board', image: Images.noticeboard, route: 'NoticeBoard' },
+        { name: 'Fees', image: Images.fees, route: 'Fees' },
+        { name: 'Transport', image: Images.transport, route: 'TransportRoutes' },
+        { name: 'Download Center', image: Images.directDownload, route: 'DownloadCenter' },
+        { name: 'Teacher Review', image: Images.ratingBlank, route: 'TeacherReview' },
+        { name: 'Examination', image: Images.syllabus, route: 'Examination' },
+        { name: 'Video Tutorial', image: Images.zoom, route: 'VideoTutorial' },
+        // add more mappings here if required
+    ];
+
+    // Build the two base menus (student and driver) from the master list
+    const studentMenuBase = [
+        'Dashboard', 'Profile', 'Homework', 'Daily Assignment', 'Lesson Plan',
+        'Class Timetable', 'Attendance', 'Notice Board', 'Fees', 'Transport',
+        'Download Center', 'Teacher Review', 'Examination', 'Video Tutorial'
+    ];
+
+    const driverMenuBase = [
+        'Dashboard', 'Profile', 'Transport', 'My Students'
+    ];
+
     useEffect(() => {
-        // console.log('drawer props navigation....', props.navigation);
-        let logoutitem = { name: 'Logout', image: Images.logout, onItemPress: onConfirmLogout };
+        buildMenuForUser();
+    }, [defultSetting, userData]);
 
-        let studentMenu = [
-            { name: 'Dashboard', image: Images.home, onItemPress: () => { NavigationService.navigate('Home') } },
-            { name: 'Profile', image: Images.profile, onItemPress: () => { NavigationService.navigate('Profile') } },
-            { name: 'Homework', image: Images.homework, onItemPress: () => { NavigationService.navigate('Homework') } },
-            { name: 'Daily Assignment', image: Images.dailyAssignment, onItemPress: () => NavigationService.navigate('DailyAssignment') },
-            { name: 'Lesson Plan', image: Images.lessonPlan3, onItemPress: () => NavigationService.navigate('LessonPlan') },
-            { name: 'Class Timetable', image: Images.timetable, onItemPress: () => NavigationService.navigate('ClassTimeTable') },
-            { name: 'Attendance', image: Images.attendance, onItemPress: () => NavigationService.navigate('Attendance') },
-            { name: 'Notice Board', image: Images.noticeboard, onItemPress: () => NavigationService.navigate('NoticeBoard') },
-            { name: 'Fees', image: Images.fees, onItemPress: () => NavigationService.navigate('Fees') },
-            { name: 'Transport', image: Images.transport, onItemPress: () => NavigationService.navigate('TransportRoutes') },
-            { name: 'Download Center', image: Images.directDownload, onItemPress: () => NavigationService.navigate('DownloadCenter') },
-            { name: 'Teacher Review', image: Images.ratingBlank, onItemPress: () => NavigationService.navigate('TeacherReview') },
-            { name: 'Examination', image: Images.examination, onItemPress: () => NavigationService.navigate('Examination') },
-            ...(defultSetting.is_video_tutorial === '1' ? [{ name: 'Video Tutorial', image: Images.zoom, onItemPress: () => NavigationService.navigate('VideoTutorial') }] : [])
-        ];
-        let driverMenu = [
-            { name: 'Dashboard', image: Images.home, onItemPress: () => { NavigationService.navigate('Home') } },
-            { name: 'Profile', image: Images.profile, onItemPress: () => { NavigationService.navigate('Profile') } },
-            { name: 'Transport', image: Images.car, onItemPress: () => NavigationService.navigate('TransportRoutes') },
-            { name: 'My Students', image: Images.mystudents, onItemPress: () => null },
-            // { name: 'Logout', image: Images.logout, onItemPress: () => NavigationService.navigate('AuthStack') },
-        ];
+    const buildMenuForUser = () => {
+        const logoutitem = { name: 'Logout', image: Images.logout, onItemPress: onConfirmLogout };
 
-        if (userData?.type == 'driver') {
-            setUserMenu([...driverMenu, logoutitem]);
-        } else {
-            setUserMenu([...studentMenu, logoutitem]);
+        // get allowed modules from server
+        const modules = defultSetting?.app_modules || [];
+        const allowedSet = new Set(modules.map(m => (m?.menu_name || '').toString().trim()));
+
+        // choose base depending on user type
+        const baseNames = userData?.type === 'driver' ? driverMenuBase : studentMenuBase;
+
+        // if server didn't provide modules, show the full base menu
+        const filtered = baseNames
+            .filter(name => {
+                if (!modules || modules.length === 0) return true; // no server restrictions
+                return allowedSet.has(name); // show only if server allows
+            })
+            .map(name => {
+                const meta = allMenuItems.find(mi => mi.name === name);
+                return {
+                    name,
+                    image: meta?.image || { uri: LOCAL_FALLBACK_ICON },
+                    onItemPress: meta?.route ? () => NavigationService.navigate(meta.route) : () => { },
+                };
+            });
+
+        // If server contains modules not in base list, append them at the end (fallback)
+        if (modules && modules.length > 0) {
+            modules.forEach(m => {
+                const name = (m?.menu_name || '').toString().trim();
+                const already = filtered.find(x => x.name === name);
+                if (!already) {
+                    // try find metadata; fallback to local file icon and noop
+                    const meta = allMenuItems.find(mi => mi.name === name);
+                    filtered.push({
+                        name,
+                        image: meta?.image || { uri: LOCAL_FALLBACK_ICON },
+                        onItemPress: meta?.route ? () => NavigationService.navigate(meta.route) : () => { },
+                    });
+                }
+            });
         }
-    }, []);
+
+        setUserMenu([...filtered, logoutitem]);
+    }
 
     const setDarkMode = async () => {
         let appsetting = { ...appSetting, darkMode: !appSetting.darkMode }
@@ -129,14 +176,10 @@ const DrawerContent = (props) => {
             };
 
             const response = await Request('app-update', 'POST', params); // Use the Request function
-            // console.log("appVersion", appVersion, "response", response);
 
             if (response?.status && response?.version && response?.url) {
                 setLatestVersion(response.version);
                 setDownloadUrl(response.url);
-                // console.log("response.version", response.version);
-                // console.log("appVersion", appVersion);
-
                 if (parseFloat(appVersion) < parseFloat(response.version)) {
                     setShowUpdatePrompt(true);
                 }
@@ -146,69 +189,10 @@ const DrawerContent = (props) => {
         }
     };
 
-    // const downloadApk = async () => {
-    //     const granted = await requestStoragePermission();
-    //     if (!granted) {
-    //         Alert.alert('Permission Denied', 'Storage permission is required to download the update.');
-    //         return;
-    //     }
-
-    //     const fileName = `app_update_${latestVersion}.apk`;
-    //     // const destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-
-    //     // Use DocumentDirectoryPath for better compatibility
-    //     let destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-    //     // For Android 11+ (API 30+), DownloadDirectoryPath may not be writable
-    //     if (Platform.OS === 'android' && Platform.Version >= 30) {
-    //         destPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-    //     }
-
-    //     setIsDownloading(true); // Show the progress modal
-
-    //     const downloadOptions = {
-    //         fromUrl: downloadUrl,
-    //         toFile: destPath,
-    //         progressDivider: 1,
-    //         begin: () => {
-    //             console.log('Download started');
-    //         },
-    //         progress: (res) => {
-    //             const progress = Math.floor((res.bytesWritten / res.contentLength) * 100);
-    //             setDownloadProgress(progress); // Update the progress state
-    //         },
-    //     };
-
-    //     RNFS.downloadFile(downloadOptions)
-    //         .promise.then(res => {
-    //             setIsDownloading(false); // Hide the progress modal
-    //             if (res.statusCode === 200) {
-    //                 Alert.alert('Download Complete', `APK saved to Downloads folder as ${fileName}`);
-    //             } else {
-    //                 Alert.alert('Failed', 'Download failed. Try again.');
-    //             }
-    //         })
-    //         .catch(err => {
-    //             setIsDownloading(false); // Hide the progress modal
-    //             console.error('Download error:', err);
-    //             Alert.alert('Error', `${err.message || err}`);
-    //         });
-    // };
-
     useEffect(() => {
         checkForVersionUpdate();
-        // console.log("userData", defultSetting);
+        console.log("userData", defultSetting);
     }, []);
-
-    // const getLocalData = async ()=>{
-    //     let settingData = await AsyncStorage.getItem('appSetting');
-    //     let userdata = await AsyncStorage.getItem('userData');
-    //     if(settingData){
-    //         dispatch(setAppSetting(JSON.parse(settingData)));
-    //     }
-    //     if(userdata){
-    //       dispatch(setuser(JSON.parse(userdata)));
-    //     }
-    //  }
 
     const userImage = userData?.image?.replace('//uploads/student_images', '');
 
@@ -260,7 +244,7 @@ const DrawerContent = (props) => {
                     </View>
                     <View style={{ flex: 3, justifyContent: 'center', marginLeft: 15 }}>
                         <Text numberOfLines={2} style={{ ...styles.title, color: colors.text }}>{userData?.name}</Text>
-                        <Text style={{ ...TextStyles.subTitle, color: colors.text }}>class 3(A)</Text>
+                        <Text style={{ ...TextStyles.subTitle, color: colors.text }}>{userData?.type == 'student' ? `class. ${userData?.class}(${userData?.section})` : 'Driver'}</Text>
                     </View>
                 </Pressable>
                 <View style={{ paddingLeft: moderateScale(20), paddingVertical: 10, backgroundColor: colors.background }}>

@@ -41,7 +41,7 @@ const isImageUrl = url => {
 };
 
 const Index = ({ navigation }) => {
-  
+
   const { userData } = useSelector(state => state.User);
   const { colors } = useTheme();
 
@@ -107,10 +107,27 @@ const Index = ({ navigation }) => {
         <View style={styles.cardInner}>
           {/* Thumbnail */}
           <View style={styles.thumbnailWrapper}>
-            <Image
+            {/* <Image
               source={thumbnailUrl ? { uri: thumbnailUrl } : DEFAULT_THUMB}
               style={styles.thumbnail}
               resizeMode="cover"
+            /> */}
+            <LinearGradient
+              colors={['#7ff685ff', 'rgba(60, 98, 43, 1)ff']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.thumbnail}
+            />
+            <Icon
+              name="play-circle-outline"
+              size={48}
+              color="#f32419cc"
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: [{ translateX: -24 }, { translateY: -24 }],
+              }}
             />
           </View>
 
