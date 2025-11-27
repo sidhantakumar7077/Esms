@@ -17,6 +17,7 @@ import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Orientation from 'react-native-orientation-locker';
 import YoutubePlayer from 'react-native-youtube-iframe';
+import NavigationService from '../../Services/Navigation';
 
 const { width } = Dimensions.get('window');
 const VIDEO_HEIGHT = (width * 9) / 16;
@@ -34,6 +35,7 @@ const getYoutubeId = url => {
 };
 
 const VideoPlayer = ({ route, navigation }) => {
+
     const { video } = route.params || {};
     const videoUrl = video?.video_link;
     const videoType = video?.video_type?.toString?.() || '1';
@@ -313,7 +315,7 @@ const VideoPlayer = ({ route, navigation }) => {
                         <View style={styles.headerBar}>
                             <TouchableOpacity
                                 style={styles.backButton}
-                                onPress={() => navigation.goBack()}
+                                onPress={() => NavigationService.navigate('VideoTutorial')}
                             >
                                 <Icon name="arrow-back" size={24} color="#f9fafb" />
                             </TouchableOpacity>
@@ -429,13 +431,12 @@ const VideoPlayer = ({ route, navigation }) => {
                             </Text>
 
                             {video?.description ? (
-                            <>
-                                <Text style={styles.sectionHeader}>Description</Text>
-                                <Text style={styles.description}>
-                                    {video.description}
-                                    {/* Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. */}
-                                </Text>
-                            </>
+                                <>
+                                    <Text style={styles.sectionHeader}>Description</Text>
+                                    <Text style={styles.description}>
+                                        {video.description}
+                                    </Text>
+                                </>
                             ) : null}
                         </View>
 
