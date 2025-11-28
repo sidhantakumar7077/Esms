@@ -10,6 +10,7 @@ import {
     TouchableOpacity,
     StatusBar,
     BackHandler,
+    Image,
 } from 'react-native';
 import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
@@ -18,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Orientation from 'react-native-orientation-locker';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import NavigationService from '../../Services/Navigation';
+import { Images } from '../../Constants/Images';
 
 const { width } = Dimensions.get('window');
 const VIDEO_HEIGHT = (width * 9) / 16;
@@ -317,7 +319,16 @@ const VideoPlayer = ({ route, navigation }) => {
                                 style={styles.backButton}
                                 onPress={() => NavigationService.navigate('VideoTutorial')}
                             >
-                                <Icon name="arrow-back" size={24} color="#f9fafb" />
+                                <Image
+                                    source={Images.rightArrow}
+                                    style={{
+                                        height: 22,
+                                        width: 22,
+                                        tintColor: '#f9fafb',
+                                        transform: [{ rotate: '180deg' }]
+                                    }}
+                                />
+                                {/* <Icon name="arrow-back" size={24} color="#f9fafb" /> */}
                             </TouchableOpacity>
 
                             <View style={{ flex: 1 }}>

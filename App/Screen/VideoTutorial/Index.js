@@ -14,10 +14,10 @@ import {
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@react-navigation/native';
-import BackHeader from '../../Components/BackHeader';
-import NavigationService from '../../Services/Navigation';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Images } from '../../Constants/Images';
+import NavigationService from '../../Services/Navigation';
 
 const { width } = Dimensions.get('window');
 
@@ -180,12 +180,44 @@ const Index = ({ navigation }) => {
   return (
     <View style={styles.screen}>
       {/* HEADER */}
-      <BackHeader
-        title='Video Tutorials'
-        onBackIconPress={() => {
-          NavigationService.navigate('Home');
-        }}
-      />
+      <View style={styles.headerShadow}>
+        <LinearGradient
+          colors={[colors.lightGreen, colors.lightGreen]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={Images.rightArrow}
+                style={{
+                  height: 22,
+                  width: 22,
+                  tintColor: '#000000ff',
+                  transform: [{ rotate: '180deg' }]
+                }}
+              />
+              {/* <Icon name="arrow-back-ios-new" size={20} color="#000000ff" /> */}
+            </TouchableOpacity>
+            <View>
+              <Text style={styles.headerTitle}>Tutorials</Text>
+              <Text style={styles.headerSubtitle}>
+                Watch your assigned lessons
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.counterPill}>
+            <Text style={styles.counterNumber}>{videos.length}</Text>
+            <Text style={styles.counterLabel}>Videos</Text>
+          </View>
+        </LinearGradient>
+      </View>
 
       {/* LIST */}
       <View style={styles.listContainer}>
@@ -246,7 +278,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(15, 23, 42, 0.18)',
+    // backgroundColor: 'rgba(15, 23, 42, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
