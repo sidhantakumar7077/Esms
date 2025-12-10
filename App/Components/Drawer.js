@@ -72,6 +72,22 @@ const DrawerContent = (props) => {
         // add more mappings here if required
     ];
 
+    // Default Menu Show if modules is empty or null
+    const defaultMenu = [
+        { name: 'Dashboard', image: Images.home, route: 'Home' },
+        { name: 'Profile', image: Images.profile, route: 'Profile' },
+        { name: 'Homework', image: Images.homework, route: 'Homework' },
+        { name: 'Daily Assignment', image: Images.dailyAssignment, route: 'DailyAssignment' },
+        { name: 'Lesson Plan', image: Images.lessonPlan3, route: 'LessonPlan' },
+        { name: 'Class Timetable', image: Images.timetable, route: 'ClassTimeTable' },
+        { name: 'Attendance', image: Images.attendance, route: 'Attendance' },
+        { name: 'Notice Board', image: Images.noticeboard, route: 'NoticeBoard' },
+        { name: 'Fees', image: Images.fees, route: 'Fees' },
+        { name: 'Download Center', image: Images.directDownload, route: 'DownloadCenter' },
+        { name: 'Teacher Review', image: Images.ratingBlank, route: 'TeacherReview' },
+        { name: 'Examination', image: Images.syllabus, route: 'Examination' },
+    ];
+
     // Build the two base menus (student and driver) from the master list
     const studentMenuBase = [
         'Dashboard', 'Profile', 'Homework', 'Daily Assignment', 'Lesson Plan',
@@ -91,7 +107,11 @@ const DrawerContent = (props) => {
         const logoutitem = { name: 'Logout', image: Images.logout, onItemPress: onConfirmLogout };
 
         // get allowed modules from server
-        const modules = defultSetting?.app_modules || [];
+        // const modules = defultSetting?.app_modules || [];
+        // Show defaultMenu if app_modules is empty or null
+        const modules = defultSetting?.app_modules && defultSetting.app_modules.length > 0
+            ? defultSetting.app_modules
+            : defaultMenu.map(item => ({ menu_name: item.name }));
         const allowedSet = new Set(modules.map(m => (m?.menu_name || '').toString().trim()));
 
         // choose base depending on user type

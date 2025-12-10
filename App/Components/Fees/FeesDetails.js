@@ -10,7 +10,8 @@ import {
   TouchableOpacity,
   View,
   NativeModules,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useTheme, useNavigation } from '@react-navigation/native';
@@ -29,15 +30,19 @@ const { NdpsAESLibrary } = NativeModules;
 const FeesDetails = () => {
   const { Request } = UseApi();
   const navigation = useNavigation();
-  const { userData } = useSelector(state => state.User);
+  const { userData, defultSetting } = useSelector(state => state.User);
   const { colors } = useTheme();
 
   const [loading, setLoading] = useState(false);
   const [transportFees, setTransportFees] = useState([]);
   const [studentDueFees, setStudentDueFees] = useState([]);
+  const [payment_mode, setPayment_mode] = useState(null);
+  const [ShowBankDetailsModal, setShowBankDetailsModal] = useState(false);
 
   useEffect(() => {
     getFeesDetails();
+    // console.log("Payment Mode", defultSetting.payment_mode);
+    setPayment_mode(defultSetting.payment_mode);
   }, []);
 
   const getFeesDetails = async () => {
@@ -99,12 +104,12 @@ const FeesDetails = () => {
     mode: 'uat',
   };
 
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      console.log('NativeModules keys:', Object.keys(NativeModules));
-      console.log('NdpsAESLibrary =>', NativeModules.NdpsAESLibrary);
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (Platform.OS === 'android') {
+  //     console.log('NativeModules keys:', Object.keys(NativeModules));
+  //     console.log('NdpsAESLibrary =>', NativeModules.NdpsAESLibrary);
+  //   }
+  // }, []);
 
   // Start NDPS payment for a fee item
   const makePayment = async (item) => {
@@ -187,8 +192,9 @@ const FeesDetails = () => {
           {item?.fees_group_name}
         </Text>
 
-        {(String(item?.status || '').toLowerCase() === 'unpaid' ||
-          String(item?.status || '').toLowerCase() === 'partial') && (
+        {payment_mode && payment_mode.payment_type === 'atompay' &&
+          (String(item?.status || '').toLowerCase() === 'unpaid' ||
+            String(item?.status || '').toLowerCase() === 'partial') && (
             <TouchableOpacity
               onPress={() => makePayment(item)}
               activeOpacity={0.8}
@@ -196,7 +202,8 @@ const FeesDetails = () => {
             >
               <Text style={{ ...TextStyles.title2, color: Colors.white2 }}>Pay Now</Text>
             </TouchableOpacity>
-          )}
+          )
+        }
       </View>
 
       <View style={styles.detailsContainer}>
@@ -254,7 +261,17 @@ const FeesDetails = () => {
             renderItem={renderItem}
             contentContainerStyle={{ padding: moderateScale(5) }}
             ListHeaderComponent={() => (
-              <Text style={styles.headerText}>Student Fees Details</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={styles.headerText}>Student Fees Details</Text>
+                {payment_mode && payment_mode.payment_type === 'qrcode' &&
+                  <TouchableOpacity
+                    style={{ paddingHorizontal: moderateScale(7), paddingVertical: moderateScale(5), backgroundColor: Colors.Green1, borderRadius: moderateScale(5) }}
+                    onPress={() => setShowBankDetailsModal(true)}
+                  >
+                    <Text style={{ color: Colors.white2 }}>Bank Details</Text>
+                  </TouchableOpacity>
+                }
+              </View>
             )}
             ListEmptyComponent={() => (
               <View style={styles.noDataContainer}>
@@ -284,6 +301,141 @@ const FeesDetails = () => {
               )}
             />
           )}
+
+          {/* Bank Details Modal */}
+          <Modal
+            visible={ShowBankDetailsModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowBankDetailsModal(false)}
+          >
+            <View style={styles.modalBackdrop}>
+              {/* tap on dim area to close */}
+              <TouchableOpacity
+                activeOpacity={1}
+                style={styles.modalBackdropTouch}
+                onPress={() => setShowBankDetailsModal(false)}
+              />
+
+              <View style={styles.modalSheet}>
+                {/* handle bar */}
+                <View style={styles.modalHandleContainer}>
+                  <View style={styles.modalHandle} />
+                </View>
+
+                {/* header */}
+                <View style={styles.modalHeaderRow}>
+                  <View style={styles.modalHeaderTextBox}>
+                    <Text style={styles.modalHeaderTitle}>Bank Payment</Text>
+                    <Text style={styles.modalHeaderSubtitle}>
+                      Use the QR or bank details to pay your fees
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => setShowBankDetailsModal(false)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={styles.modalHeaderClose}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* tags */}
+                <View style={styles.modalTagRow}>
+                  {/* {payment_mode?.payment_type ? (
+                    <View style={styles.modalTagPaymentType}>
+                      <Text style={styles.modalTagPaymentTypeText}>
+                        {String(payment_mode.payment_type).toUpperCase()}
+                      </Text>
+                    </View>
+                  ) : null} */}
+
+                  {payment_mode?.title ? (
+                    <View style={styles.modalTagTitle}>
+                      <Text
+                        style={styles.modalTagTitleText}
+                        numberOfLines={1}
+                      >
+                        {payment_mode.title}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <ScrollView
+                  style={styles.modalScroll}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* QR block */}
+                  {payment_mode?.qr_image ? (
+                    <View style={styles.modalQrCard}>
+                      <Text style={styles.modalQrLabel}>Scan this QR to pay</Text>
+
+                      <Image
+                        source={{ uri: payment_mode.qr_image }}
+                        resizeMode="contain"
+                        style={styles.modalQrImage}
+                      />
+
+                      <Text style={styles.modalQrSubLabel}>
+                        UPI / banking apps supported
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {/* Bank details card */}
+                  {payment_mode?.bank_acount_details ? (
+                    <View style={styles.modalBankCard}>
+                      <Text style={styles.modalBankTitle}>Bank Details</Text>
+
+                      {payment_mode.bank_acount_details.split(',').map((line, index) => {
+                        const parts = line.split('-');
+                        const label = parts[0] ? parts[0].trim() : '';
+                        const value = parts.slice(1).join('-').trim();
+
+                        return (
+                          <View key={index} style={styles.modalBankRow}>
+                            <Text
+                              style={styles.modalBankLabel}
+                              numberOfLines={2}
+                            >
+                              {label || 'Detail'}
+                            </Text>
+                            <Text
+                              style={styles.modalBankValue}
+                              numberOfLines={2}
+                            >
+                              {value || line.trim()}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </ScrollView>
+
+                {/* bottom buttons */}
+                <View style={styles.modalButtonsRow}>
+                  <TouchableOpacity
+                    onPress={() => setShowBankDetailsModal(false)}
+                    activeOpacity={0.85}
+                    style={styles.modalBtnSecondary}
+                  >
+                    <Text style={styles.modalBtnSecondaryText}>Close</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={styles.modalBtnPrimary}
+                    onPress={() => setShowBankDetailsModal(false)}
+                  >
+                    <Text style={styles.modalBtnPrimaryText}>I Have Paid</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
         </ScrollView>
       )}
     </View>
@@ -335,5 +487,179 @@ const styles = StyleSheet.create({
   noDataText: {
     fontSize: moderateScale(14),
     marginTop: 10,
+  },
+
+  // ================= MODAL STYLES =================
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdropTouch: {
+    flex: 1,
+  },
+  modalSheet: {
+    backgroundColor: Colors.white2,
+    borderTopLeftRadius: moderateScale(24),
+    borderTopRightRadius: moderateScale(24),
+    paddingHorizontal: moderateScale(18),
+    paddingTop: moderateScale(10),
+    paddingBottom: moderateScale(18),
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 15,
+  },
+  modalHandleContainer: {
+    alignItems: 'center',
+    marginBottom: moderateScale(8),
+  },
+  modalHandle: {
+    width: moderateScale(40),
+    height: moderateScale(4),
+    borderRadius: moderateScale(4),
+    backgroundColor: '#D1D5DB',
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: moderateScale(6),
+  },
+  modalHeaderTextBox: {
+    flex: 1,
+    paddingRight: moderateScale(12),
+  },
+  modalHeaderTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: '700',
+    color: Colors.black,
+  },
+  modalHeaderSubtitle: {
+    fontSize: moderateScale(12),
+    color: '#6B7280',
+    marginTop: moderateScale(2),
+  },
+  modalHeaderClose: {
+    fontSize: moderateScale(20),
+    color: '#9CA3AF',
+  },
+  modalTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: moderateScale(8),
+    marginBottom: moderateScale(10),
+  },
+  modalTagPaymentType: {
+    paddingHorizontal: moderateScale(10),
+    paddingVertical: moderateScale(4),
+    borderRadius: moderateScale(20),
+    backgroundColor: 'rgba(34,197,94,0.12)',
+    marginRight: moderateScale(8),
+  },
+  modalTagPaymentTypeText: {
+    fontSize: moderateScale(11),
+    fontWeight: '600',
+    color: Colors.Green1,
+  },
+  modalTagTitle: {
+    paddingHorizontal: moderateScale(10),
+    paddingVertical: moderateScale(4),
+    borderRadius: moderateScale(20),
+    backgroundColor: 'rgba(59,130,246,0.1)',
+    maxWidth: '60%',
+  },
+  modalTagTitleText: {
+    fontSize: moderateScale(11),
+    color: '#1D4ED8',
+  },
+  modalScroll: {
+    maxHeight: screenHeight * 0.55,
+  },
+  modalQrCard: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: moderateScale(16),
+    paddingVertical: moderateScale(12),
+    paddingHorizontal: moderateScale(10),
+    alignItems: 'center',
+    marginBottom: moderateScale(14),
+  },
+  modalQrLabel: {
+    fontSize: moderateScale(12),
+    color: '#4B5563',
+    marginBottom: moderateScale(8),
+  },
+  modalQrImage: {
+    width: moderateScale(180),
+    height: moderateScale(180),
+    borderRadius: moderateScale(12),
+    marginBottom: moderateScale(6),
+  },
+  modalQrSubLabel: {
+    fontSize: moderateScale(11),
+    color: '#6B7280',
+  },
+  modalBankCard: {
+    borderRadius: moderateScale(16),
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: moderateScale(12),
+    paddingVertical: moderateScale(10),
+    backgroundColor: '#FFFFFF',
+  },
+  modalBankTitle: {
+    fontSize: moderateScale(13),
+    fontWeight: '600',
+    color: Colors.black,
+    marginBottom: moderateScale(8),
+  },
+  modalBankRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: moderateScale(6),
+  },
+  modalBankLabel: {
+    fontSize: moderateScale(12),
+    color: '#6B7280',
+    width: '32%',
+  },
+  modalBankValue: {
+    fontSize: moderateScale(13),
+    color: Colors.black,
+    fontWeight: '500',
+    width: '68%',
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: moderateScale(14),
+  },
+  modalBtnSecondary: {
+    flex: 1,
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(999),
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+    marginRight: moderateScale(8),
+  },
+  modalBtnSecondaryText: {
+    fontSize: moderateScale(14),
+    color: '#374151',
+    fontWeight: '500',
+  },
+  modalBtnPrimary: {
+    flex: 1,
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(999),
+    backgroundColor: Colors.Green1,
+    alignItems: 'center',
+    marginLeft: moderateScale(8),
+  },
+  modalBtnPrimaryText: {
+    fontSize: moderateScale(14),
+    color: Colors.white2,
+    fontWeight: '600',
   },
 });

@@ -103,6 +103,7 @@ const SplashScreen = () => {
     fontWeight: '600',
     marginTop: 5,
   }));
+  
   return (
     <ScrollView style={{ flex: 1, marginBottom: 10 }}>
       <StatusBar translucent={true} backgroundColor={Colors.black} barStyle="light-content" />
