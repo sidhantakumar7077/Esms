@@ -326,9 +326,9 @@ const FeesDetails = () => {
                 {/* header */}
                 <View style={styles.modalHeaderRow}>
                   <View style={styles.modalHeaderTextBox}>
-                    <Text style={styles.modalHeaderTitle}>Bank Payment</Text>
+                    <Text style={styles.modalHeaderTitle}>Online Payment</Text>
                     <Text style={styles.modalHeaderSubtitle}>
-                      Use the QR or bank details to pay your fees
+                      {payment_mode?.title ? payment_mode.title : 'Use the QR or bank details to pay your fees'}
                     </Text>
                   </View>
 
@@ -341,14 +341,14 @@ const FeesDetails = () => {
                 </View>
 
                 {/* tags */}
-                <View style={styles.modalTagRow}>
-                  {/* {payment_mode?.payment_type ? (
+                {/* <View style={styles.modalTagRow}>
+                  {payment_mode?.payment_type ? (
                     <View style={styles.modalTagPaymentType}>
                       <Text style={styles.modalTagPaymentTypeText}>
                         {String(payment_mode.payment_type).toUpperCase()}
                       </Text>
                     </View>
-                  ) : null} */}
+                  ) : null}
 
                   {payment_mode?.title ? (
                     <View style={styles.modalTagTitle}>
@@ -360,7 +360,7 @@ const FeesDetails = () => {
                       </Text>
                     </View>
                   ) : null}
-                </View>
+                </View> */}
 
                 <ScrollView
                   style={styles.modalScroll}
@@ -369,17 +369,11 @@ const FeesDetails = () => {
                   {/* QR block */}
                   {payment_mode?.qr_image ? (
                     <View style={styles.modalQrCard}>
-                      <Text style={styles.modalQrLabel}>Scan this QR to pay</Text>
-
                       <Image
                         source={{ uri: payment_mode.qr_image }}
                         resizeMode="contain"
                         style={styles.modalQrImage}
                       />
-
-                      <Text style={styles.modalQrSubLabel}>
-                        UPI / banking apps supported
-                      </Text>
                     </View>
                   ) : null}
 
@@ -424,13 +418,13 @@ const FeesDetails = () => {
                     <Text style={styles.modalBtnSecondaryText}>Close</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     activeOpacity={0.85}
                     style={styles.modalBtnPrimary}
                     onPress={() => setShowBankDetailsModal(false)}
                   >
                     <Text style={styles.modalBtnPrimaryText}>I Have Paid</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
               </View>
             </View>
@@ -525,7 +519,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: moderateScale(6),
+    marginBottom: moderateScale(15),
   },
   modalHeaderTextBox: {
     flex: 1,
