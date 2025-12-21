@@ -18,8 +18,9 @@ import { useTheme } from '@react-navigation/native'
 // ]
 
 const ContentDownload = () => {
+    
     const { Request } = UseApi();
-    const {colors} = useTheme();
+    const { colors } = useTheme();
     const { userData, profileData } = useSelector(state => state.User);
     const [loading, setLoading] = useState(false);
     const [contents, setContents] = useState([]);
@@ -34,11 +35,14 @@ const ContentDownload = () => {
     const getContents = async () => {
         setLoading(true);
         let params = {
-            student_id: userData?.id,
+            // student_id: userData?.id,
+            // role: 'student',
+            // type: '1',
+            // class_id:userData?.class_id,
+            // section_id:userData?.section_id
+            user_id: userData?.id,
             role: 'student',
-            type: '1',
-            class_id:userData?.class_id,
-            section_id:userData?.section_id
+            type: '1'
         }
 
         let data;
@@ -47,9 +51,11 @@ const ContentDownload = () => {
         } catch (err) {
             console.log('err2....', err);
         }
-   
+
+        // console.log("DownLoad Data", data);
         if (data?.status && data?.data) {
             setContents(data?.data);
+            // console.log("Download Data", data?.data);
         }
         setLoading(false);
     }
@@ -60,7 +66,7 @@ const ContentDownload = () => {
                 <View style={{ marginBottom: 100 }}>
                     {contents.map((item, index) => {
                         return (
-                            <View key={index} style={{ ...appStyles.card, width: '92%',backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                            <View key={index} style={{ ...appStyles.card, width: '92%', backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
                                 <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
                                     <Text style={{ ...TextStyles.title2, color: colors.text }}>{item.title}</Text>
                                     {<View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 2 }}>
@@ -75,7 +81,7 @@ const ContentDownload = () => {
                                                 style={{
                                                     height: 20,
                                                     width: 20,
-                                                    tintColor:colors.text
+                                                    tintColor: colors.text
                                                 }}
                                             />
                                         </TouchableOpacity>
@@ -109,9 +115,9 @@ const ContentDownload = () => {
                     transparent
                 >
                     <View style={styles.modal}>
-                        <View style={{...styles.popup,backgroundColor:colors.background,borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                        <View style={{ ...styles.popup, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
                             <View>
-                                <Text style={{ ...TextStyles.title2, textAlign: 'center',color:colors.text }}>Content</Text>
+                                <Text style={{ ...TextStyles.title2, textAlign: 'center', color: colors.text }}>Content</Text>
                                 <TouchableOpacity onPress={() => setOpenModal(false)}
                                     style={{ position: 'absolute', right: 0, top: 0, padding: 5 }}
                                 >
@@ -127,8 +133,8 @@ const ContentDownload = () => {
                                 </TouchableOpacity>
                             </View>
                             <View style={{ marginTop: 20 }}>
-                                <Text style={{...TextStyles.title2,color:colors.text}}>{currMeterial?.upload_doc[0]?.vid_title}</Text>
-                                <View style={{...appStyles.itmRow,marginTop:10}}>
+                                <Text style={{ ...TextStyles.title2, color: colors.text }}>{currMeterial?.upload_doc[0]?.vid_title}</Text>
+                                <View style={{ ...appStyles.itmRow, marginTop: 10 }}>
                                     <Text style={{ ...TextStyles.keyText, color: colors.text }}>Share Date</Text>
                                     <Text style={{ ...TextStyles.valueText, color: colors.text }}>{currMeterial?.share_date}</Text>
                                 </View>

@@ -11,7 +11,6 @@ import { Colors } from '../../Constants/Colors'
 import WebView from 'react-native-webview'
 import { useTheme } from '@react-navigation/native'
 
-
 const contents = [
     { title: 'Title1', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
     { title: 'Title1', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
@@ -20,10 +19,11 @@ const contents = [
     { title: 'Title1', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
     { title: 'Title1', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
 ]
+
 const VideoDownloads = () => {
     const [playVideo, setPlayVideo] = useState(false);
     const { Request } = UseApi();
-    const {colors} = useTheme();
+    const { colors } = useTheme();
     const { userData, profileData } = useSelector(state => state.User);
     const [loading, setLoading] = useState(false);
     const [videos, setVideos] = useState([]);
@@ -37,11 +37,14 @@ const VideoDownloads = () => {
     const getVideos = async () => {
         setLoading(true);
         let params = {
-            student_id: userData?.id,
+            // student_id: userData?.id,
+            // role: 'student',
+            // type: '2',
+            // class_id:userData?.class_id,
+            // section_id:userData?.section_id
+            user_id: userData?.id,
             role: 'student',
-            type: '2',
-            class_id:userData?.class_id,
-            section_id:userData?.section_id
+            type: '1'
         }
 
         let data;
@@ -50,9 +53,10 @@ const VideoDownloads = () => {
         } catch (err) {
             console.log('err2....', err);
         }
-    
+
         if (data?.status && data?.data) {
             setVideos(data?.data);
+            console.log("Video Data", data?.data);
         }
         setLoading(false);
     }
@@ -64,30 +68,25 @@ const VideoDownloads = () => {
                 <View style={{ marginBottom: 100 }}>
                     {videos.map((item, index) => {
                         return (
-                            <View key={index} style={{ ...appStyles.card, width: '92%',backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                            <View key={index} style={{ ...appStyles.card, width: '92%', backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
                                 <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
                                     <Text style={{ ...TextStyles.title2, color: colors.text }}>{item.title}</Text>
-                                    {<View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 2 }}>
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                setCurrMeterial(item);
-                                                setPlayVideo(true);
-                                                let arr = item.video_link.split('=');
-                                                let videoId = arr[arr.length - 1];
-                                                console.log('videoId...', videoId);
-                                                setCurrVideoId(videoId)
-                                            }}
-                                        >
-                                            <Image
-                                                source={Images.eye}
-                                                style={{
-                                                    height: 20,
-                                                    width: 20,
-                                                    tintColor:colors.text
+                                    {item.video_link && (
+                                        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 2 }}>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    setCurrMeterial(item);
+                                                    setPlayVideo(true);
+                                                    let arr = item.video_link.split('=');
+                                                    let videoId = arr[arr.length - 1];
+                                                    console.log('videoId...', videoId);
+                                                    setCurrVideoId(videoId)
                                                 }}
-                                            />
-                                        </TouchableOpacity>
-                                    </View>}
+                                            >
+                                                <Image source={Images.eye} style={{ height: 20, width: 20, tintColor: colors.text }} />
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
                                 </View>
                                 <View style={{ padding: 15, paddingTop: 5 }}>
                                     <View style={appStyles.itmRow}>
@@ -124,9 +123,9 @@ const VideoDownloads = () => {
                     transparent
                 >
                     <View style={styles.modal}>
-                        <View style={{...styles.popup,backgroundColor:colors.background,borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                        <View style={{ ...styles.popup, backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
                             <View style={{ marginBottom: 20 }}>
-                                <Text style={{ ...TextStyles.title2, textAlign: 'center',color:colors.text }}>Video</Text>
+                                <Text style={{ ...TextStyles.title2, textAlign: 'center', color: colors.text }}>Video</Text>
                                 <TouchableOpacity onPress={() => setPlayVideo(false)}
                                     style={{ position: 'absolute', right: 0, top: 0, padding: 5 }}
                                 >
@@ -142,7 +141,7 @@ const VideoDownloads = () => {
                                 </TouchableOpacity>
                             </View>
                             <View>
-                                <Text style={{...TextStyles.title2,color:colors.text}}>{currMeterial?.vid_title}</Text>
+                                <Text style={{ ...TextStyles.title2, color: colors.text }}>{currMeterial?.vid_title}</Text>
                                 {/* <View style={{marginTop:10}}>
                                     {<YouTubePlayer
                                         height={220}
@@ -160,10 +159,10 @@ const VideoDownloads = () => {
                                         source={{ uri: currMeterial?.video_link }}
                                         // source={{ uri: `https://www.youtube.com/embed/${'1SnPKhCdlsU'}?autoplay=1&rel=0&showinfo=0&controls=0`}}
                                         style={styles.video}
-                                        // allowsFullscreenVideo={true}
+                                    // allowsFullscreenVideo={true}
                                     />
                                 </View>
-                                <View style={{ ...appStyles.itmRow,marginTop:20 }}>
+                                <View style={{ ...appStyles.itmRow, marginTop: 20 }}>
                                     <Text style={{ ...TextStyles.keyText, color: colors.text }}>Created By</Text>
                                     <Text style={TextStyles.valueText}>{currMeterial?.created_by || 'NA'}</Text>
                                 </View>
@@ -200,11 +199,11 @@ const styles = StyleSheet.create({
     },
     container: {
         // flex: 1,
-        marginTop:20,
-        height:450
+        marginTop: 20,
+        height: 450
     },
     video: {
         // flex: 1,
-        height:100
+        height: 100
     },
 })

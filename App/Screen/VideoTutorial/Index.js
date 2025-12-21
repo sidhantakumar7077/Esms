@@ -14,6 +14,7 @@ import {
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Images } from '../../Constants/Images';
@@ -27,8 +28,8 @@ const CARD_MARGIN = 14;
 const CARD_WIDTH =
   (width - CARD_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
-const API_URL =
-  'https://esmsv2.scriptlab.in/api/apicontroller/video-tutorial-list';
+// const API_URL =
+//   'https://esmsv2.scriptlab.in/api/apicontroller/video-tutorial-list';
 
 const X_API_KEY = '123123';
 
@@ -53,6 +54,9 @@ const Index = ({ navigation }) => {
   const [error, setError] = useState(null);
 
   const fetchVideos = async () => {
+    const storedApiBase = await AsyncStorage.getItem('api_base_url');
+    const API_URL = `${storedApiBase}video-tutorial-list`;
+    // console.log("Base Url", storedApiBase);          // https://ssec.esms.live/api/apicontroller/
     try {
       setError(null);
 
@@ -76,10 +80,11 @@ const Index = ({ navigation }) => {
       if (res.data?.status && Array.isArray(res.data.data)) {
         setVideos(res.data.data);
       } else {
-        setError(res.data?.message || 'Unexpected response format');
+        setError(res.data?.message || 'Failed to load videos');
+        // console.log("Error -=-=-=", res.data);
       }
     } catch (e) {
-      console.log('Fetch videos error:', e?.message, e?.response?.data);
+      // console.log('Fetch videos error:', e?.message, e?.response?.data);
       setError('Failed to load videos');
     } finally {
       setLoading(false);
@@ -169,7 +174,7 @@ const Index = ({ navigation }) => {
   if (error && videos.length === 0) {
     return (
       <View style={styles.center}>
-        <Text style={{ marginBottom: 12 }}>{error}</Text>
+        <Text style={{ marginBottom: 12, color: colors.primary }}>{error}</Text>
         <TouchableOpacity onPress={fetchVideos} style={styles.retryBtn}>
           <Text style={styles.retryText}>Try again</Text>
         </TouchableOpacity>

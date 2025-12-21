@@ -9,17 +9,14 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Linking,
+  Alert
 } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Images } from '../../Constants/Images';
 import { Colors } from '../../Constants/Colors';
 import { appStyles, FONTS, TextStyles } from '../../Constants/Fonts';
-import {
-  maxWidth,
-  moderateScale,
-  screenWidth,
-  textSize,
-} from '../../Constants/PixelRatio';
+import { maxWidth, moderateScale, screenWidth, textSize } from '../../Constants/PixelRatio';
 import NavigationService from '../../Services/Navigation';
 import { useSelector } from 'react-redux';
 import UseApi from '../../ApiConfig';
@@ -168,6 +165,7 @@ const subjectProgress = [
 ];
 
 const Dashboard = () => {
+
   const { Request } = UseApi();
   const { userData, defultSetting } = useSelector(state => state.User);
   const { colors } = useTheme();
@@ -185,6 +183,7 @@ const Dashboard = () => {
     teacher_list: [],
     upcomming_classes: [],
   });
+
   useEffect(() => {
     if (userData?.type == 'driver') {
       setUserMenu(driverMenu);
@@ -256,6 +255,60 @@ const Dashboard = () => {
     inputRange: [0, 1],
     outputRange: ['0deg', '20deg'], // Adjust the angle as per your preference
   });
+
+  const helpDeskDetails = useMemo(() => {
+    const arr = defultSetting?.help_desk?.details;
+    return Array.isArray(arr) ? arr : [];
+  }, [defultSetting]);
+
+  const helpDeskAvailable = defultSetting?.help_desk?.available === "1";
+
+  const openPhone = async (phone) => {
+    if (!phone) return;
+    const url = `tel:${phone}`;
+    const can = await Linking.canOpenURL(url);
+    if (!can) return Alert.alert("Error", "Cannot open phone dialer on this device.");
+    await Linking.openURL(url);
+  };
+
+  const openEmail = async (email) => {
+    if (!email) return;
+    const url = `mailto:${email}`;
+    const can = await Linking.canOpenURL(url);
+    if (!can) return Alert.alert("Error", "Cannot open email app on this device.");
+    await Linking.openURL(url);
+  };
+
+  const onPressItem = (item) => {
+    const type = String(item?.type || "").toLowerCase();
+
+    if (type === "phone") return openPhone(item?.value);
+    if (type === "email") return openEmail(item?.value);
+  };
+
+  const renderItem = ({ item }) => {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => onPressItem(item)}
+        style={{
+          paddingVertical: 10,
+          borderBottomWidth: 0.5,
+          borderBottomColor: '#ccc',
+        }}
+      >
+        <Text style={{ color: colors.text, fontSize: 14, fontWeight: "600" }}>
+          {item?.label}
+        </Text>
+
+        {!!item?.value && (
+          <Text style={{ color: colors.text, opacity: 0.8, marginTop: 4 }}>
+            {item?.value}
+          </Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const getNotices = async () => {
     setLoading(true);
@@ -402,6 +455,39 @@ const Dashboard = () => {
           )}
         </View>
         <View style={{ backgroundColor: colors.background, marginBottom: 50 }}>
+          {helpDeskAvailable && helpDeskDetails.length > 0 ? (
+            <View
+              style={{
+                width: '95%',
+                alignSelf: 'center',
+                marginTop: 15,
+                borderRadius: 10,
+                backgroundColor: colors.background,
+                borderColor: colors.lightBlck,
+                borderWidth: 0.5,
+                borderRadius: 12,
+                elevation: 3,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                padding: 15,
+                overflow: "hidden",
+              }}
+            >
+              <Text style={{ ...styles.title, color: colors.text, fontSize: 18, fontWeight: "bold", marginBottom: 5 }}>
+                Help Desk
+              </Text>
+
+              <FlatList
+                data={helpDeskDetails}
+                keyExtractor={(item, index) => String(item?.id ?? index)}
+                renderItem={renderItem}
+                scrollEnabled={false} // because it's inside a card; enable if needed
+              />
+            </View>
+          ) : null}
+
           <View
             style={{
               ...styles.card,
@@ -604,6 +690,7 @@ const Dashboard = () => {
               })}
             </View>
           </View>
+
           {userData?.type == 'student' && (
             <ScrollView nestedScrollEnabled={true}>
               <View

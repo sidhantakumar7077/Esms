@@ -211,7 +211,7 @@ const DrawerContent = (props) => {
 
     useEffect(() => {
         checkForVersionUpdate();
-        console.log("userData", defultSetting);
+        console.log("userData From Drawer.js", defultSetting);
     }, []);
 
     const userImage = userData?.image?.replace('//uploads/student_images', '');
