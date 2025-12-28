@@ -68,8 +68,8 @@ const DrawerContent = (props) => {
         { name: 'Download Center', image: Images.directDownload, route: 'DownloadCenter' },
         { name: 'Teacher Review', image: Images.ratingBlank, route: 'TeacherReview' },
         { name: 'Examination', image: Images.syllabus, route: 'Examination' },
-        { name: 'Video Tutorial', image: Images.zoom, route: 'LMS' },           //VideoTutorial
-        { name: 'LMS', image: Images.carStudent, route: 'LMS' },
+        { name: 'Video Tutorial', image: Images.zoom, route: 'VideoTutorial' },
+        { name: 'LMS', image: Images.downloads, route: 'LMS' },
         // add more mappings here if required
     ];
 
@@ -93,7 +93,7 @@ const DrawerContent = (props) => {
     const studentMenuBase = [
         'Dashboard', 'Profile', 'Homework', 'Daily Assignment', 'Lesson Plan',
         'Class Timetable', 'Attendance', 'Notice Board', 'Fees', 'Transport',
-        'Download Center', 'Teacher Review', 'Examination', 'Video Tutorial'
+        'Download Center', 'Teacher Review', 'Examination', 'Video Tutorial', 'LMS'
     ];
 
     const driverMenuBase = [

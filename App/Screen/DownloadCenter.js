@@ -39,7 +39,8 @@ const DownloadCenter = () => {
                         }}
                     />
                 </View>
-                <View style={{marginTop:10, minHeight: screenHeight - 150, borderRadius: 15, backgroundColor: colors.background }}>
+                <ContentDownload />
+                {/* <View style={{marginTop:10, minHeight: screenHeight - 150, borderRadius: 15, backgroundColor: colors.background }}>
                     <Tab.Navigator
                         // initialRouteName='Personal Info'
                         screenOptions={{
@@ -71,7 +72,7 @@ const DownloadCenter = () => {
                         <Tab.Screen name={'CONTENTS'} component={ContentDownload} />
                         <Tab.Screen name={'VIDEOS'} component={VideoDownloads} />
                     </Tab.Navigator>
-                </View>
+                </View> */}
                 {/* <View style={{ ...appStyles.main, width: '100%' }}>
                 </View> */}
             </ScrollView>
