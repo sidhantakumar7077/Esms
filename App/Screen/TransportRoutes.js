@@ -18,17 +18,18 @@ import { moderateScale } from '../Constants/PixelRatio';
 import { useDispatch, useSelector } from 'react-redux';
 import { setVehicleDetails } from '../Redux/reducer/User';
 import { useTheme, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 // ========= LIVE TRACKING API URLs =========
-const AUTH_URL =
-    'https://esmsv2.scriptlab.in/api/live-location/generate-location-tracking-access-token';
-const FENCE_URL =
-    'https://esmsv2.scriptlab.in/api/live-location/get-fence-list';
-const LIVE_LOCATION_URL = 'https://open.iopgps.com/api/device/location';
+// const AUTH_URL =
+//     'https://esmsv2.scriptlab.in/api/live-location/generate-location-tracking-access-token';
+// const FENCE_URL =
+//     'https://esmsv2.scriptlab.in/api/live-location/get-fence-list';
+// const LIVE_LOCATION_URL = 'https://open.iopgps.com/api/device/location';
 
 const TransportRoutes = () => {
     const navigation = useNavigation();
@@ -45,6 +46,9 @@ const TransportRoutes = () => {
 
     // --------- 1. Get auth token ----------
     const getAuthToken = async () => {
+        const storedImgBase = await AsyncStorage.getItem('image_base_url');
+        const AUTH_URL = `${storedImgBase}api/live-location/generate-location-tracking-access-token`
+
         const formData = new FormData();
         formData.append('user_id', String(USER_ID)); // must match Postman
 
@@ -71,6 +75,9 @@ const TransportRoutes = () => {
 
     // --------- 2. Get fence list (route + stops) ----------
     const getFenceList = async (token) => {
+        const storedImgBase = await AsyncStorage.getItem('image_base_url');
+        const FENCE_URL = `${storedImgBase}api/live-location/get-fence-list`
+
         const url = `${FENCE_URL}?accessToken=${token}&user_id=${USER_ID}`;
         const res = await fetch(url);
         const json = await res.json();
@@ -113,6 +120,7 @@ const TransportRoutes = () => {
 
     // --------- 3. Get live bus location ----------
     const getLiveLocation = async (token, imei) => {
+        const LIVE_LOCATION_URL = 'https://open.iopgps.com/api/device/location';
         const url = `${LIVE_LOCATION_URL}?accessToken=${token}&imei=${imei}`;
         const res = await fetch(url);
         const json = await res.json();

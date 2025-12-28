@@ -20,6 +20,7 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_MAPS_APIKEY } from '../../../App';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -29,8 +30,8 @@ import BusIcon from '../../Assets/Images/cab.png';
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const IMEI = '359097370181391';
 const REFRESH_MS = 5000;
-const AUTH_URL = 'https://esmsv2.scriptlab.in/api/live-location/generate-location-tracking-access-token';
-const FENCE_URL = 'https://esmsv2.scriptlab.in/api/live-location/get-fence-list';
+// const AUTH_URL = 'https://esmsv2.scriptlab.in/api/live-location/generate-location-tracking-access-token';
+// const FENCE_URL = 'https://esmsv2.scriptlab.in/api/live-location/get-fence-list';
 const LIVE_URL = 'https://open.iopgps.com/api/device/location';
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -178,6 +179,9 @@ const LocationTrackingByDevice = () => {
 
     // ─── API calls ──────────────────────────────────────────────────────────────
     const fetchToken = async (signal) => {
+        const storedImgBase = await AsyncStorage.getItem('image_base_url');
+        const AUTH_URL = `${storedImgBase}api/live-location/generate-location-tracking-access-token`
+
         const body = new URLSearchParams();
         body.append('user_id', USER_ID);
 
@@ -195,6 +199,9 @@ const LocationTrackingByDevice = () => {
     };
 
     const fetchFences = async (accessToken, signal) => {
+        const storedImgBase = await AsyncStorage.getItem('image_base_url');
+        const FENCE_URL = `${storedImgBase}api/live-location/get-fence-list`
+
         try {
             const { data } = await axios.get(FENCE_URL, {
                 params: { accessToken, user_id: USER_ID },

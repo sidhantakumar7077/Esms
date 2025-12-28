@@ -68,7 +68,8 @@ const DrawerContent = (props) => {
         { name: 'Download Center', image: Images.directDownload, route: 'DownloadCenter' },
         { name: 'Teacher Review', image: Images.ratingBlank, route: 'TeacherReview' },
         { name: 'Examination', image: Images.syllabus, route: 'Examination' },
-        { name: 'Video Tutorial', image: Images.zoom, route: 'VideoTutorial' },
+        { name: 'Video Tutorial', image: Images.zoom, route: 'LMS' },           //VideoTutorial
+        { name: 'LMS', image: Images.carStudent, route: 'LMS' },
         // add more mappings here if required
     ];
 

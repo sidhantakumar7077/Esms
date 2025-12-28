@@ -32,6 +32,8 @@ import TeacherReview from '../Screen/TeacherReview';
 import DownloadCenter from '../Screen/DownloadCenter';
 import VideoTutorial from '../Screen/VideoTutorial/Index';
 import VideoPlayer from '../Screen/VideoTutorial/VideoPlayer';
+import LMS from '../Screen/LMS/Index';
+import LMSDetails from '../Screen/LMS/LMSDetails';
 
 // import { createNativeStackNavigator } from '@react-navigation/native-stack';
 // import { NavigationContainer } from '@react-navigation/native';
@@ -100,6 +102,8 @@ const DrawerNav = ({ navigation }) => {
             <Drawer.Screen name="DownloadCenter" component={DownloadCenter} />
             <Drawer.Screen name="VideoTutorial" component={VideoTutorial} />
             <Drawer.Screen name="VideoPlayer" component={VideoPlayer} />
+            <Drawer.Screen name="LMS" component={LMS} />
+            <Drawer.Screen name="LMSDetails" component={LMSDetails} />
 
             {/* <Drawer.Screen options={{swipeEnabled:false}} name="Question" component={Question} /> */}
 

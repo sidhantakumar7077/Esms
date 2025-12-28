@@ -28,11 +28,6 @@ const CARD_MARGIN = 14;
 const CARD_WIDTH =
   (width - CARD_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
-// const API_URL =
-//   'https://esmsv2.scriptlab.in/api/apicontroller/video-tutorial-list';
-
-const X_API_KEY = '123123';
-
 // default thumbnail
 const DEFAULT_THUMB = require('../../Assets/Images/video_placeholder1.png');
 
@@ -73,7 +68,7 @@ const Index = ({ navigation }) => {
       const res = await axios.post(API_URL, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'X-API-KEY': X_API_KEY,
+          'X-API-KEY': '123123',
         },
       });
 
