@@ -7,12 +7,15 @@ import {
     Text,
     View,
     Platform,
+    Image,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import BackHeader from "../../Components/BackHeader";
 import NavigationService from "../../Services/Navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSelector } from "react-redux";
+import { useTheme } from "@react-navigation/native";
+import { TextStyles } from '../../Constants/Fonts';
 
 const ICON_PALETTE = [
     { bg: "#EEF2FF", fg: "#4F46E5", icon: "book-outline" },
@@ -31,8 +34,9 @@ const pickIconStyle = (seed) => {
 };
 
 const Index = () => {
-    const { userData } = useSelector((state) => state.User);
 
+    const { colors } = useTheme();
+    const { userData } = useSelector((state) => state.User);
     const [loading, setLoading] = useState(false);
     const [rows, setRows] = useState([]);
     const [error, setError] = useState("");
@@ -125,7 +129,7 @@ const Index = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <BackHeader
                 title="LMS"
                 onBackIconPress={() => {
@@ -134,11 +138,24 @@ const Index = () => {
             />
 
             {/* Top Section */}
-            <View style={styles.headerArea}>
-                <Text style={styles.screenTitle}>Learning Content</Text>
-                <Text style={styles.screenHint}>
-                    Choose a content type to explore available materials.
-                </Text>
+
+            <View style={{ flexDirection: 'row', marginTop: 15, width: '90%', alignSelf: 'center' }}>
+                <View style={{ flex: 1 }}>
+                    <Text style={{ ...TextStyles.headerText, color: colors.text }}>Learning Content!</Text>
+                    <Text style={styles.screenHint}>
+                        Choose a content type to explore available materials.
+                    </Text>
+                </View>
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                    <Image
+                        source={require('../../Assets/Images/assignment.jpg')}
+                        style={{
+                            height: 65,
+                            width: 65,
+                            marginTop: -5
+                        }}
+                    />
+                </View>
             </View>
 
             {loading ? (
@@ -181,8 +198,6 @@ const Index = () => {
 export default Index;
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#F1F5F9" },
-
     headerArea: {
         paddingHorizontal: 16,
         paddingTop: 14,

@@ -6,7 +6,6 @@ import {
     StyleSheet,
     Text,
     ActivityIndicator,
-    SafeAreaView,
     Button,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
@@ -136,7 +135,7 @@ export default function LocationTracking() {
     }, []);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             {location && hasTried ? (
                 <>
                     {location?.latitude && location?.longitude && (
@@ -191,7 +190,7 @@ export default function LocationTracking() {
                     <Text>Fetching your location...</Text>
                 </View>
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 

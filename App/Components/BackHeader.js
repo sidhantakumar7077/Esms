@@ -8,12 +8,6 @@ import { FONTS } from '../Constants/Fonts'
 const BackHeader = (props) => {
     return (
         <View>
-            <StatusBar
-                translucent={true}
-                // backgroundColor="transparent"
-                backgroundColor="black"
-                barStyle="light-content"
-            />
             <View style={styles.header}>
                 <Pressable
                     onPress={props.onBackIconPress}
@@ -46,7 +40,7 @@ const styles = StyleSheet.create({
         // marginHorizontal: 5,
         flexDirection: 'row',
         // marginTop:40
-        marginTop:StatusBar.currentHeight || 0
+        // marginTop:StatusBar.currentHeight || 0
     },
     backIcon:{
         height: 22,

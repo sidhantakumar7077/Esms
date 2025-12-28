@@ -7,7 +7,6 @@ import {
     StyleSheet,
     Image,
     StatusBar,
-    SafeAreaView,
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
@@ -163,7 +162,7 @@ const SchoolCodeScreen = () => {
     const HERO_HEIGHT = SCREEN_H < 700 ? SCREEN_H * 0.50 : SCREEN_H * 0.54;
 
     return (
-        <SafeAreaView style={[styles.safe]}>
+        <View style={[styles.safe]}>
             <StatusBar backgroundColor={Colors.black} barStyle="light-content" />
 
             {/* Soft background */}
@@ -250,7 +249,7 @@ const SchoolCodeScreen = () => {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 };
 

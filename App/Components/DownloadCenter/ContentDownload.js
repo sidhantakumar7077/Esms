@@ -1,33 +1,37 @@
-import { ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { Colors } from '../../Constants/Colors'
-import { TextStyles, appStyles } from '../../Constants/Fonts'
-import { Images } from '../../Constants/Images'
-import { maxWidth, moderateScale, screenHeight, screenWidth } from '../../Constants/PixelRatio'
-import UseApi from '../../ApiConfig'
-import { useSelector } from 'react-redux'
-import { useTheme } from '@react-navigation/native'
-import rndownloadFile from '../../Utils/rndownload';
-
-// const contents = [
-//     { title: 'Title1', shareDate: '12/06/24', validUpto: '13/06/24', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
-//     { title: 'Title1', shareDate: '12/06/24', validUpto: '13/06/24', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
-//     { title: 'Title1', shareDate: '12/06/24', validUpto: '13/06/24', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
-//     { title: 'Title1', shareDate: '12/06/24', validUpto: '13/06/24', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
-//     { title: 'Title1', shareDate: '12/06/24', validUpto: '13/06/24', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
-//     { title: 'Title1', shareDate: '12/06/24', validUpto: '13/06/24', shareBy: 'Super Admin (9000)', descriptoin: 'description...' },
-// ]
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    Linking,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { TextStyles, appStyles } from "../../Constants/Fonts";
+import { Images } from "../../Constants/Images";
+import { moderateScale, screenHeight } from "../../Constants/PixelRatio";
+import UseApi from "../../ApiConfig";
+import { useSelector } from "react-redux";
+import { useTheme } from "@react-navigation/native";
+import rndownloadFile from "../../Utils/rndownload";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const ContentDownload = () => {
 
     const { Request } = UseApi();
     const { colors } = useTheme();
-    const { userData, profileData } = useSelector(state => state.User);
+    const { userData } = useSelector((state) => state.User);
+
     const [loading, setLoading] = useState(false);
     const [contents, setContents] = useState([]);
     const [openModal, setOpenModal] = useState(false);
     const [currMeterial, setCurrMeterial] = useState(null);
-
 
     useEffect(() => {
         getContents();
@@ -35,65 +39,104 @@ const ContentDownload = () => {
 
     const getContents = async () => {
         setLoading(true);
-        let params = {
-            // student_id: userData?.id,
-            // role: 'student',
-            // type: '1',
-            // class_id:userData?.class_id,
-            // section_id:userData?.section_id
+
+        const params = {
             user_id: userData?.id,
-            role: 'student',
-            type: '1'
-        }
+            role: "student",
+            type: "1",
+        };
 
-        let data;
         try {
-            data = await Request('share-list', 'POST', params);
+            const data = await Request("share-list", "POST", params);
+            if (data?.status && data?.data) setContents(data.data);
         } catch (err) {
-            console.log('err2....', err);
+            console.log("err2.", err);
+        } finally {
+            setLoading(false);
         }
-
-        // console.log("DownLoad Data", data);
-        if (data?.status && data?.data) {
-            setContents(data?.data);
-            // console.log("Download Data", data?.data);
-        }
-        setLoading(false);
-    }
+    };
 
     const openInBrowser = async (url) => {
         if (!url) return;
         try {
             const can = await Linking.canOpenURL(url);
-            if (can) {
-                await Linking.openURL(url);
-            } else {
-                Alert.alert('Invalid Link', 'Unable to open this link.');
-            }
+            if (can) await Linking.openURL(url);
+            else Alert.alert("Invalid Link", "Unable to open this link.");
         } catch (e) {
-            console.log('openInBrowser error:', e);
-            Alert.alert('Error', 'Unable to open the link.');
+            console.log("openInBrowser error:", e);
+            Alert.alert("Error", "Unable to open the link.");
         }
     };
 
     const onDownloadPress = (url) => {
         if (!url) return;
-        Alert.alert('Download', 'Do you want to download this file?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Download', onPress: () => rndownloadFile(url) },
+        Alert.alert("Download", "Do you want to download this file?", [
+            { text: "Cancel", style: "cancel" },
+            { text: "Download", onPress: () => rndownloadFile(url) },
         ]);
+    };
+
+    /**
+     * LMS-like icon themes (2 types)
+     * - DOC: document icon with green-ish palette
+     * - VIDEO: videocam icon with primary palette
+     */
+    const getAttachmentTheme = (doc) => {
+        const type = String(doc?.file_type || "").toLowerCase();
+        const isVideo = type === "video";
+
+        if (isVideo) {
+            return {
+                isVideo: true,
+                bg: "#EEF2FF",
+                fg: "#4F46E5",
+                dot: "#4F46E5",
+                icon: "videocam-outline",
+                actionIcon: "play-circle-outline",
+                actionBg: colors.primary,
+                actionFg: "#fff",
+            };
+        }
+
+        return {
+            isVideo: false,
+            bg: "#ECFDF5",
+            fg: "#059669",
+            dot: "#059669",
+            icon: "document-text-outline",
+            actionIcon: "download-outline",
+            actionBg: colors.background,
+            actionFg: colors.text,
+        };
     };
 
     return (
         <View style={{ backgroundColor: colors.background }}>
-            <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, minHeight: screenHeight - 155 }}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={{
+                    backgroundColor: colors.background,
+                    minHeight: screenHeight - 155,
+                }}
+            >
                 <View style={{ marginBottom: 100 }}>
                     {contents.map((item, index) => {
                         return (
-                            <View key={index} style={{ ...appStyles.card, width: '92%', backgroundColor: colors.background, borderColor: colors.lightBlck, borderWidth: 0.5 }}>
+                            <View
+                                key={index}
+                                style={{
+                                    ...appStyles.card,
+                                    width: "92%",
+                                    backgroundColor: colors.background,
+                                    borderColor: colors.lightBlck,
+                                    borderWidth: 0.5,
+                                }}
+                            >
+                                {/* Card header (unchanged) */}
                                 <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
                                     <Text style={{ ...TextStyles.title2, color: colors.text }}>{item.title}</Text>
-                                    {<View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 2 }}>
+
+                                    <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 2 }}>
                                         <TouchableOpacity
                                             onPress={() => {
                                                 setOpenModal(true);
@@ -102,34 +145,38 @@ const ContentDownload = () => {
                                         >
                                             <Image
                                                 source={Images.eye}
-                                                style={{
-                                                    height: 20,
-                                                    width: 20,
-                                                    tintColor: colors.text
-                                                }}
+                                                style={{ height: 20, width: 20, tintColor: colors.text }}
                                             />
                                         </TouchableOpacity>
-                                    </View>}
+                                    </View>
                                 </View>
+
                                 <View style={{ padding: 15, paddingTop: 5 }}>
                                     <View style={appStyles.itmRow}>
                                         <Text style={{ ...TextStyles.keyText, color: colors.text }}>Share Date</Text>
                                         <Text style={{ ...TextStyles.valueText, color: colors.text }}>{item.share_date}</Text>
                                     </View>
+
                                     <View style={appStyles.itmRow}>
                                         <Text style={{ ...TextStyles.keyText, color: colors.text }}>Valid Upto</Text>
-                                        <Text style={{ ...TextStyles.valueText, color: colors.text }}>{item.valid_upto || 'NA'}</Text>
+                                        <Text style={{ ...TextStyles.valueText, color: colors.text }}>
+                                            {item.valid_upto || "NA"}
+                                        </Text>
                                     </View>
+
                                     <View style={appStyles.itmRow}>
                                         <Text style={{ ...TextStyles.keyText, color: colors.text }}>Share By</Text>
-                                        <Text style={{ ...TextStyles.valueText, color: colors.text }}>{item.share_by || 'NA'}</Text>
+                                        <Text style={{ ...TextStyles.valueText, color: colors.text }}>
+                                            {item.share_by || "NA"}
+                                        </Text>
                                     </View>
                                 </View>
                             </View>
-                        )
+                        );
                     })}
                 </View>
 
+                {/* Modal */}
                 <Modal
                     visible={openModal}
                     transparent
@@ -150,11 +197,14 @@ const ContentDownload = () => {
                             {/* Header */}
                             <View style={styles.header}>
                                 <View style={styles.headerLeft}>
+                                    <View style={[styles.headerIcon, { borderColor: colors.lightBlck, backgroundColor: colors.lightGreen }]}>
+                                        <Ionicons name="folder-open-outline" size={20} color={colors.text} />
+                                    </View>
+
                                     <View style={{ flex: 1 }}>
                                         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={2}>
                                             {currMeterial?.title || "Content"}
                                         </Text>
-
                                         <Text style={[styles.headerSub, { color: colors.text }]} numberOfLines={1}>
                                             {currMeterial?.share_by ? `Shared by ${currMeterial.share_by}` : "—"}
                                         </Text>
@@ -165,97 +215,113 @@ const ContentDownload = () => {
                                     onPress={() => setOpenModal(false)}
                                     style={[styles.closeBtn, { borderColor: colors.lightBlck }]}
                                 >
-                                    <Image source={Images.close} style={{ height: 12, width: 12, tintColor: colors.text }} />
+                                    <Image
+                                        source={Images.close}
+                                        style={{ height: 12, width: 12, tintColor: colors.text }}
+                                    />
                                 </TouchableOpacity>
                             </View>
 
                             {/* Body */}
-                            <ScrollView
-                                showsVerticalScrollIndicator={false}
-                                contentContainerStyle={{ paddingBottom: 18 }}
-                            >
-                                {/* Description */}
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 18 }}>
+                                {/* Description (keep as-is) */}
                                 {currMeterial?.description?.trim() ? (
-                                    <View style={[styles.section, { borderColor: colors.lightBlck, backgroundColor: colors.background }]}>
-                                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
-                                        <Text style={[styles.sectionText, { color: colors.text }]}>{currMeterial.description}</Text>
+                                    <View style={[styles.attachCard, { borderColor: colors.lightBlck }]}>
+                                        <View style={[styles.attachHeader, { backgroundColor: colors.lightGreen, borderColor: colors.lightBlck }]}>
+                                            <View style={styles.attachHeaderLeft}>
+                                                <Ionicons name="attach-outline" size={16} color={colors.text} />
+                                                <Text style={[styles.attachHeaderTitle, { color: colors.text }]}>Attachments</Text>
+                                            </View>
+                                        </View>
+                                        <View style={[styles.attachBody, { backgroundColor: colors.background }]}>
+                                            <Text style={[styles.sectionText, { color: colors.text, marginTop: 8 }]}>
+                                                {currMeterial.description}
+                                            </Text>
+                                        </View>
                                     </View>
                                 ) : null}
 
-                                {/* Attachments */}
-                                <View style={[styles.section, { borderColor: colors.lightBlck, backgroundColor: colors.background }]}>
-                                    <View style={styles.sectionHeaderRow}>
-                                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Attachments</Text>
-                                        <View style={[styles.countBadge, { backgroundColor: colors.lightGreen, borderColor: colors.lightBlck }]}>
+                                {/* Attachments (UPDATED HEADER STYLE + LMS ICONS) */}
+                                <View style={[styles.attachCard, { borderColor: colors.lightBlck }]}>
+                                    {/* Header like your screenshot */}
+                                    <View style={[styles.attachHeader, { backgroundColor: colors.lightGreen, borderColor: colors.lightBlck }]}>
+                                        <View style={styles.attachHeaderLeft}>
+                                            <Ionicons name="attach-outline" size={16} color={colors.text} />
+                                            <Text style={[styles.attachHeaderTitle, { color: colors.text }]}>Attachments</Text>
+                                        </View>
+
+                                        <View
+                                            style={[
+                                                styles.countBadge,
+                                                { backgroundColor: colors.background, borderColor: colors.lightBlck },
+                                            ]}
+                                        >
                                             <Text style={[styles.countBadgeText, { color: colors.text }]}>
                                                 {(currMeterial?.upload_doc || []).length}
                                             </Text>
                                         </View>
                                     </View>
 
-                                    {(currMeterial?.upload_doc || []).map((doc, idx) => {
-                                        const isVideo = String(doc?.file_type || "").toLowerCase() === "video";
+                                    {/* Body */}
+                                    <View style={[styles.attachBody, { backgroundColor: colors.background }]}>
+                                        {(currMeterial?.upload_doc || []).map((doc, idx) => {
+                                            const theme = getAttachmentTheme(doc);
 
-                                        return (
-                                            <View
-                                                key={`${doc?.id || idx}`}
-                                                style={[
-                                                    styles.attachmentCard,
-                                                    { borderColor: colors.lightBlck, backgroundColor: colors.background },
-                                                ]}
-                                            >
-                                                <View style={styles.attachmentLeft}>
-                                                    <View
+                                            return (
+                                                <View
+                                                    key={`${doc?.id || idx}`}
+                                                    style={[
+                                                        styles.attachmentRow,
+                                                        { borderColor: colors.lightBlck, backgroundColor: colors.background },
+                                                    ]}
+                                                >
+                                                    {/* LEFT LMS-LIKE ICON */}
+                                                    <View style={styles.attachmentLeft}>
+                                                        <View
+                                                            style={[
+                                                                styles.lmsIcon,
+                                                                { backgroundColor: theme.bg, borderColor: colors.lightBlck },
+                                                            ]}
+                                                        >
+                                                            <Ionicons name={theme.icon} size={20} color={theme.fg} />
+                                                            <View style={[styles.lmsDot, { backgroundColor: theme.dot }]} />
+                                                        </View>
+
+                                                        <View style={{ flex: 1 }}>
+                                                            <Text style={[styles.fileTitle, { color: colors.text }]} numberOfLines={2}>
+                                                                {doc?.real_name || "Untitled"}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+
+                                                    {/* RIGHT ACTION (icon button) */}
+                                                    <TouchableOpacity
                                                         style={[
-                                                            styles.fileTypeIcon,
+                                                            styles.actionPill,
                                                             {
-                                                                backgroundColor: isVideo ? colors.primary : colors.lightGreen,
+                                                                backgroundColor: theme.actionBg,
                                                                 borderColor: colors.lightBlck,
                                                             },
                                                         ]}
+                                                        onPress={() => {
+                                                            if (theme.isVideo) openInBrowser(doc?.src);
+                                                            else onDownloadPress(doc?.src);
+                                                        }}
                                                     >
-                                                        <Text style={{ fontWeight: "900", fontSize: 12, color: isVideo ? "#fff" : colors.text }}>
-                                                            {isVideo ? "VID" : "DOC"}
-                                                        </Text>
-                                                    </View>
-
-                                                    <View style={{ flex: 1 }}>
-                                                        <Text style={[styles.fileTitle, { color: colors.text }]} numberOfLines={2}>
-                                                            {doc?.real_name || "Untitled"}
-                                                        </Text>
-
-                                                        <Text style={[styles.fileSub, { color: colors.text }]} numberOfLines={1}>
-                                                            {(doc?.file_type || "file").toUpperCase()} • {doc?.src || ""}
-                                                        </Text>
-                                                    </View>
+                                                        <Ionicons name={theme.actionIcon} size={20} color={theme.actionFg} />
+                                                    </TouchableOpacity>
                                                 </View>
+                                            );
+                                        })}
 
-                                                <TouchableOpacity
-                                                    style={[
-                                                        styles.actionPill,
-                                                        {
-                                                            backgroundColor: isVideo ? colors.primary : colors.background,
-                                                            borderColor: colors.lightBlck,
-                                                        },
-                                                    ]}
-                                                    onPress={() => {
-                                                        if (isVideo) openInBrowser(doc?.src);
-                                                        else onDownloadPress(doc?.src);
-                                                    }}
-                                                >
-                                                    <Text style={[styles.actionPillText, { color: isVideo ? "#fff" : colors.text }]}>
-                                                        {isVideo ? "Open" : "Download"}
-                                                    </Text>
-                                                </TouchableOpacity>
+                                        {(!currMeterial?.upload_doc || currMeterial.upload_doc.length === 0) ? (
+                                            <View style={[styles.emptyState, { borderColor: colors.lightBlck }]}>
+                                                <Text style={[styles.sectionText, { color: colors.text }]}>
+                                                    No attachments found.
+                                                </Text>
                                             </View>
-                                        );
-                                    })}
-
-                                    {(!currMeterial?.upload_doc || currMeterial.upload_doc.length === 0) ? (
-                                        <View style={[styles.emptyState, { borderColor: colors.lightBlck }]}>
-                                            <Text style={[styles.sectionText, { color: colors.text }]}>No attachments found.</Text>
-                                        </View>
-                                    ) : null}
+                                        ) : null}
+                                    </View>
                                 </View>
                             </ScrollView>
 
@@ -274,24 +340,27 @@ const ContentDownload = () => {
 
                 {loading && <ActivityIndicator size={28} style={{ marginTop: screenHeight / 3 }} />}
 
-                {!loading && contents.length == 0 && <View style={{ marginTop: screenHeight / 4, alignItems: 'center' }}>
-                    <Image
-                        source={Images.NoDataFound}
-                        style={{
-                            height: moderateScale(60),
-                            width: moderateScale(60),
-                            opacity: 0.5
-                            // marginTop:-15
-                        }}
-                    />
-                    <Text style={{ fontSize: moderateScale(14), marginTop: 10 }}>No records found!</Text>
-                </View>}
+                {!loading && contents.length === 0 && (
+                    <View style={{ marginTop: screenHeight / 4, alignItems: "center" }}>
+                        <Image
+                            source={Images.NoDataFound}
+                            style={{
+                                height: moderateScale(60),
+                                width: moderateScale(60),
+                                opacity: 0.5,
+                            }}
+                        />
+                        <Text style={{ fontSize: moderateScale(14), marginTop: 10, color: colors.text }}>
+                            No records found!
+                        </Text>
+                    </View>
+                )}
             </ScrollView>
         </View>
-    )
-}
+    );
+};
 
-export default ContentDownload
+export default ContentDownload;
 
 const styles = StyleSheet.create({
     modalOverlay: {
@@ -304,7 +373,7 @@ const styles = StyleSheet.create({
         width: "100%",
         borderTopLeftRadius: 26,
         borderTopRightRadius: 26,
-        height: screenHeight * 0.70,
+        height: screenHeight * 0.7,
         overflow: "hidden",
         ...Platform.select({
             android: { elevation: 10 },
@@ -317,17 +386,8 @@ const styles = StyleSheet.create({
         }),
     },
 
-    handleWrap: {
-        alignItems: "center",
-        paddingTop: 10,
-        paddingBottom: 10,
-    },
-    handle: {
-        width: 66,
-        height: 5,
-        borderRadius: 999,
-        opacity: 0.85,
-    },
+    handleWrap: { alignItems: "center", paddingTop: 10, paddingBottom: 10 },
+    handle: { width: 66, height: 5, borderRadius: 999, opacity: 0.85 },
 
     header: {
         flexDirection: "row",
@@ -339,7 +399,6 @@ const styles = StyleSheet.create({
     headerLeft: {
         flexDirection: "row",
         alignItems: "flex-start",
-        gap: 12,
         flex: 1,
         paddingRight: 10,
     },
@@ -351,6 +410,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginTop: 2,
+        marginRight: 12,
     },
     headerTitle: {
         fontSize: moderateScale(16),
@@ -358,29 +418,10 @@ const styles = StyleSheet.create({
         lineHeight: moderateScale(22),
     },
     headerSub: {
-        marginTop: 3,
         fontSize: moderateScale(12),
         fontWeight: "700",
         opacity: 0.75,
     },
-    metaRow: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-        marginTop: 10,
-    },
-    metaPill: {
-        borderWidth: 0.5,
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-    },
-    metaText: {
-        fontSize: moderateScale(11),
-        fontWeight: "800",
-        opacity: 0.95,
-    },
-
     closeBtn: {
         height: 40,
         width: 40,
@@ -391,29 +432,49 @@ const styles = StyleSheet.create({
     },
 
     section: {
-        marginTop: 14,
+        marginTop: 12,
         marginHorizontal: 16,
         borderWidth: 0.5,
         borderRadius: 16,
         padding: 14,
     },
-    sectionHeaderRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 10,
-    },
     sectionTitle: {
         fontSize: moderateScale(13),
         fontWeight: "900",
+        marginBottom: 8,
     },
     sectionText: {
         fontSize: moderateScale(12),
         lineHeight: moderateScale(18),
         fontWeight: "600",
-        opacity: 0.85,
+        opacity: 0.9,
     },
 
+    /* UPDATED ATTACHMENTS CARD */
+    attachCard: {
+        marginTop: 12,
+        marginHorizontal: 16,
+        borderWidth: 0.5,
+        borderRadius: 16,
+        overflow: "hidden",
+    },
+    attachHeader: {
+        borderBottomWidth: 0.5,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    attachHeaderLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    attachHeaderTitle: {
+        fontSize: moderateScale(13),
+        fontWeight: "900",
+        marginLeft: 8,
+    },
     countBadge: {
         borderWidth: 0.5,
         height: 26,
@@ -428,7 +489,12 @@ const styles = StyleSheet.create({
         fontWeight: "900",
     },
 
-    attachmentCard: {
+    attachBody: {
+        paddingHorizontal: 14,
+        paddingBottom: 14,
+    },
+
+    attachmentRow: {
         borderWidth: 0.5,
         borderRadius: 14,
         padding: 12,
@@ -440,18 +506,31 @@ const styles = StyleSheet.create({
     attachmentLeft: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
         flex: 1,
         paddingRight: 10,
     },
-    fileTypeIcon: {
-        height: 42,
+
+    /* LMS-like icon */
+    lmsIcon: {
         width: 42,
+        height: 42,
         borderRadius: 14,
         borderWidth: 0.5,
         alignItems: "center",
         justifyContent: "center",
+        position: "relative",
+        marginRight: 10,
     },
+    lmsDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 99,
+        position: "absolute",
+        right: 7,
+        bottom: 7,
+        opacity: 0.95,
+    },
+
     fileTitle: {
         fontSize: moderateScale(13),
         fontWeight: "900",
@@ -459,20 +538,17 @@ const styles = StyleSheet.create({
     },
     fileSub: {
         marginTop: 4,
-        fontSize: moderateScale(11),
-        fontWeight: "600",
-        opacity: 0.72,
+        fontSize: moderateScale(10),
+        opacity: 0.6,
     },
 
     actionPill: {
+        height: 38,
+        width: 44,
+        borderRadius: 14,
         borderWidth: 0.5,
-        borderRadius: 999,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-    },
-    actionPillText: {
-        fontSize: moderateScale(12),
-        fontWeight: "900",
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     emptyState: {
@@ -486,7 +562,7 @@ const styles = StyleSheet.create({
     footer: {
         paddingHorizontal: 16,
         paddingTop: 10,
-        paddingBottom: 10,
+        paddingBottom: 50,
         borderTopWidth: 0.5,
     },
     primaryBtn: {

@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         // marginBottom: 40,
-        marginTop: 30
+        // marginTop: 30
     },
     row: {
         flexDirection: 'row',

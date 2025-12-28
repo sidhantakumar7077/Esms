@@ -356,13 +356,6 @@ const Dashboard = () => {
 
   return (
     <View>
-      <StatusBar
-        translucent={true}
-        // backgroundColor="transparent"
-        backgroundColor="black"
-      // backgroundColor={Colors.lightGreen2}
-      // barStyle="light-content"
-      />
       <View style={{ ...styles.header, backgroundColor: colors.lightGreen }}>
         <Pressable onPress={() => NavigationService.openDrawer()}>
           <Image
@@ -867,7 +860,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 40,
+    // marginTop: 40,
     paddingTop: 10,
     paddingHorizontal: '3%',
     paddingVertical: 5,

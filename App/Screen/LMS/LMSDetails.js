@@ -22,6 +22,7 @@ import moment from "moment";
 import BackHeader from "../../Components/BackHeader";
 import NavigationService from "../../Services/Navigation";
 import { useSelector } from "react-redux";
+import { useTheme } from "@react-navigation/native";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -69,9 +70,11 @@ const fileTheme = (file) => {
 };
 
 const LMSDetails = ({ route }) => {
+
     const { width } = useWindowDimensions();
     const contentTypeId = route?.params?.content_id; // passed from list screen
     const { userData } = useSelector((state) => state.User);
+    const { colors } = useTheme();
 
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -253,7 +256,7 @@ const LMSDetails = ({ route }) => {
     }, [lessons]);
 
     return (
-        <View style={styles.container}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <BackHeader
                 title="LMS Content"
                 onBackIconPress={() => NavigationService.navigate("LMS")}
@@ -320,13 +323,6 @@ const LMSDetails = ({ route }) => {
                                             <Text style={styles.lessonTitle} numberOfLines={2}>
                                                 {lesson.name || "Lesson"}
                                             </Text>
-
-                                            <View style={styles.metaRow}>
-                                                <View style={styles.badge}>
-                                                    <Ionicons name="list-outline" size={14} color="#475569" />
-                                                    <Text style={styles.badgeText}>{topicsCount} topics</Text>
-                                                </View>
-                                            </View>
                                         </View>
                                     </View>
 
@@ -396,10 +392,10 @@ const LMSDetails = ({ route }) => {
                                                                         {/* Description */}
                                                                         {details?.description ? (
                                                                             <View style={styles.sectionBlock}>
-                                                                                <View style={styles.sectionTitleRow}>
+                                                                                {/* <View style={styles.sectionTitleRow}>
                                                                                     <Ionicons name="reader-outline" size={16} color="#475569" />
                                                                                     <Text style={styles.sectionTitle}>Description</Text>
-                                                                                </View>
+                                                                                </View> */}
 
                                                                                 <RenderHTML
                                                                                     contentWidth={Math.max(280, width - 32 - 24)} // screen padding + card padding
@@ -412,7 +408,7 @@ const LMSDetails = ({ route }) => {
                                                                         {/* Attachments */}
                                                                         <View style={[styles.sectionBlock, { marginTop: 12 }]}>
                                                                             <View style={styles.sectionTitleRow}>
-                                                                                <Ionicons name="attach-outline" size={16} color="#475569" />
+                                                                                <Ionicons name="attach-outline" size={20} color="#475569" />
                                                                                 <Text style={styles.sectionTitle}>Attachments</Text>
                                                                             </View>
 
@@ -482,8 +478,6 @@ const LMSDetails = ({ route }) => {
 export default LMSDetails;
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#F1F5F9" },
-
     headerArea: {
         paddingHorizontal: 16,
         paddingTop: 14,
@@ -677,11 +671,11 @@ const styles = StyleSheet.create({
     detailsLoading: { paddingVertical: 10, alignItems: "center" },
 
     sectionBlock: {
-        backgroundColor: "#FFFFFF",
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-        borderRadius: 16,
-        padding: 12,
+        // backgroundColor: "#FFFFFF",
+        // borderWidth: 1,
+        // borderColor: "#E2E8F0",
+        // borderRadius: 16,
+        padding: 8,
     },
     sectionTitleRow: {
         flexDirection: "row",
@@ -690,7 +684,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     sectionTitle: {
-        fontSize: 13,
+        fontSize: 18,
         fontWeight: "900",
         color: "#0F172A",
         letterSpacing: 0.1,
