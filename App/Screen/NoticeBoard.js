@@ -26,8 +26,8 @@ import {useSelector} from 'react-redux';
 import RenderHtml from 'react-native-render-html';
 import {useTheme} from '@react-navigation/native';
 import {TouchableOpacity} from 'react-native-gesture-handler';
-import RNFS from 'react-native-fs';
-import { downloadFile } from '../Utils/DownloadFile';
+// import RNFS from 'react-native-fs';
+// import { downloadFile } from '../Utils/DownloadFile';
 import rndownloadFile from '../Utils/rndownload';
 // import {basename} from 'react-native-path';
 

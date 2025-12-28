@@ -36,6 +36,7 @@
     "moment": "^2.30.1",
     "react": "18.2.0",
     "react-native": "0.72.6",
+    "react-native-blob-util": "^0.18.3",
     "react-native-calendars": "^1.1303.0",
     "react-native-device-info": "^14.0.4",
     "react-native-document-picker": "^9.1.0",
