@@ -73,13 +73,11 @@ const fileTheme = (file) => {
     return { bg: "#E2E8F0", fg: "#0F172A", icon: "attach-outline" };
 };
 
-const IsPdfShareble = "0";    // 1 = enable PDF sharing, 0 = disable
-
 const LMSDetails = ({ route }) => {
 
     const { width } = useWindowDimensions();
     const contentTypeId = route?.params?.content_id; // passed from list screen
-    const { userData } = useSelector((state) => state.User);
+    const { userData, defultSetting } = useSelector((state) => state.User);
     const { colors } = useTheme();
     const isFocused = useIsFocused();
 
@@ -102,9 +100,16 @@ const LMSDetails = ({ route }) => {
     const [openingFileId, setOpeningFileId] = useState(null);
 
     // PDF sharing state
+    const [IsPdfShareble, setIsPdfShareble] = useState(null);            // 1 = enable PDF sharing, 0 = disable
     const [securePdfVisible, setSecurePdfVisible] = useState(false);
     const [securePdfPath, setSecurePdfPath] = useState("");
     const [securePdfTitle, setSecurePdfTitle] = useState("");
+
+    useEffect(() => {
+        const v = Number(defultSetting?.lms_file_download ?? 1); // default = 1
+        setIsPdfShareble(v);
+        console.log("Is pdf Open With Modal", v);
+    }, [defultSetting?.lms_file_download]);
 
     const fetchLessonTopics = useCallback(async (isRefresh = false) => {
         const storedApiBase = await AsyncStorage.getItem("api_base_url");
@@ -261,50 +266,52 @@ const LMSDetails = ({ route }) => {
         }
     }, [securePdfPath]);
 
-    const openFile = useCallback(async (file) => {
-        try {
-            const fileId = String(file?.id || "");
-            setOpeningFileId(fileId);
+    const openFile = useCallback(
+        async (file) => {
+            try {
+                const fileId = String(file?.id || "");
+                setOpeningFileId(fileId);
 
-            const ext = String(file?.file_extension || "")
-                .replace(".", "")
-                .toLowerCase();
+                const ext = String(file?.file_extension || "").replace(".", "").toLowerCase();
+                const url = `${file.file_path}`;
 
-            const url = `${file.file_path}`;
-            const rawName = file.original_name || file.file_name || "file";
-            const name = ext === "pdf" ? ensurePdfExtension(rawName) : safeFileName(rawName);
-            const localPath = `${RNFS.CachesDirectoryPath}/${name}`;
+                const rawName = file.original_name || file.file_name || "file";
+                const name = ext === "pdf" ? ensurePdfExtension(rawName) : safeFileName(rawName);
+                const localPath = `${RNFS.CachesDirectoryPath}/${name}`;
 
-            // Always download into app cache (not public folders)
-            if (await RNFS.exists(localPath)) await RNFS.unlink(localPath);
+                // Always download into app cache (not public folders)
+                if (await RNFS.exists(localPath)) await RNFS.unlink(localPath);
 
-            const dl = RNFS.downloadFile({ fromUrl: url, toFile: localPath });
-            const res = await dl.promise;
+                const dl = RNFS.downloadFile({ fromUrl: url, toFile: localPath });
+                const res = await dl.promise;
 
-            if (res.statusCode && res.statusCode >= 400) {
-                throw new Error(`Download failed (${res.statusCode})`);
+                if (res.statusCode && res.statusCode >= 400) {
+                    throw new Error(`Download failed (${res.statusCode})`);
+                }
+
+                const shareFlag = Number(IsPdfShareble ?? 1);
+
+                // PDF + NOT shareable => open secure modal
+                if (ext === "pdf" && shareFlag === 0) {
+                    setSecurePdfTitle(rawName);
+                    setSecurePdfPath(localPath);
+                    setSecurePdfVisible(true);
+                    return;
+                }
+
+                // Otherwise open external viewer
+                await FileViewer.open(localPath, { showOpenWithDialog: true });
+            } catch (e) {
+                Alert.alert("Unable to open file", e?.message || "Please try again.");
+            } finally {
+                setOpeningFileId(null);
             }
-
-            // Branch behavior only for PDFs
-            if (ext === "pdf" && IsPdfShareble === "0") {
-                // In-app secure modal (no “Open with…”, no share)
-                setSecurePdfTitle(rawName);
-                setSecurePdfPath(localPath);
-                setSecurePdfVisible(true);
-                return;
-            }
-
-            // Existing behavior (shareable / external apps)
-            await FileViewer.open(localPath, { showOpenWithDialog: true });
-        } catch (e) {
-            Alert.alert("Unable to open file", e?.message || "Please try again.");
-        } finally {
-            setOpeningFileId(null);
-        }
-    }, [closeSecurePdf]);
+        },
+        [IsPdfShareble] // IMPORTANT
+    );
 
     useEffect(() => {
-        const shouldProtect = isFocused && securePdfVisible && IsPdfShareble === "0";
+        const shouldProtect = isFocused && securePdfVisible && IsPdfShareble === 0;
 
         try {
             RNScreenshotPrevent.enabled(shouldProtect);
@@ -325,7 +332,7 @@ const LMSDetails = ({ route }) => {
                 }
             } catch (_) { }
         };
-    }, [isFocused, securePdfVisible]);
+    }, [isFocused, securePdfVisible, IsPdfShareble]);
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
