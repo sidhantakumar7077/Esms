@@ -5,6 +5,8 @@ import {
     LayoutAnimation,
     Platform,
     Pressable,
+    Modal,
+    TouchableOpacity,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -22,7 +24,9 @@ import moment from "moment";
 import BackHeader from "../../Components/BackHeader";
 import NavigationService from "../../Services/Navigation";
 import { useSelector } from "react-redux";
-import { useTheme } from "@react-navigation/native";
+import { useTheme, useIsFocused } from "@react-navigation/native";
+import RNScreenshotPrevent from "react-native-screenshot-prevent";
+import { Pdf } from "react-native-pdf-light";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -69,12 +73,15 @@ const fileTheme = (file) => {
     return { bg: "#E2E8F0", fg: "#0F172A", icon: "attach-outline" };
 };
 
+const IsPdfShareble = "0";    // 1 = enable PDF sharing, 0 = disable
+
 const LMSDetails = ({ route }) => {
 
     const { width } = useWindowDimensions();
     const contentTypeId = route?.params?.content_id; // passed from list screen
     const { userData } = useSelector((state) => state.User);
     const { colors } = useTheme();
+    const isFocused = useIsFocused();
 
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -93,6 +100,11 @@ const LMSDetails = ({ route }) => {
 
     // File open state
     const [openingFileId, setOpeningFileId] = useState(null);
+
+    // PDF sharing state
+    const [securePdfVisible, setSecurePdfVisible] = useState(false);
+    const [securePdfPath, setSecurePdfPath] = useState("");
+    const [securePdfTitle, setSecurePdfTitle] = useState("");
 
     const fetchLessonTopics = useCallback(async (isRefresh = false) => {
         const storedApiBase = await AsyncStorage.getItem("api_base_url");
@@ -221,17 +233,50 @@ const LMSDetails = ({ route }) => {
         });
     };
 
+    const normalizedLessons = useMemo(() => {
+        return lessons.map((l) => ({
+            ...l,
+            topics: Array.isArray(l.topics) ? l.topics : [],
+        }));
+    }, [lessons]);
+
+    const ensurePdfExtension = (name = "file.pdf") => {
+        const n = safeFileName(name);
+        return n.toLowerCase().endsWith(".pdf") ? n : `${n}.pdf`;
+    };
+
+    const closeSecurePdf = useCallback(async () => {
+        try {
+            setSecurePdfVisible(false);
+
+            // Clean up cached file so it’s not lingering on disk
+            if (securePdfPath && (await RNFS.exists(securePdfPath))) {
+                await RNFS.unlink(securePdfPath);
+            }
+        } catch (_) {
+            // ignore cleanup errors
+        } finally {
+            setSecurePdfPath("");
+            setSecurePdfTitle("");
+        }
+    }, [securePdfPath]);
+
     const openFile = useCallback(async (file) => {
         try {
             const fileId = String(file?.id || "");
             setOpeningFileId(fileId);
 
+            const ext = String(file?.file_extension || "")
+                .replace(".", "")
+                .toLowerCase();
+
             const url = `${file.file_path}`;
-            const name = safeFileName(file.original_name || file.file_name || "file");
+            const rawName = file.original_name || file.file_name || "file";
+            const name = ext === "pdf" ? ensurePdfExtension(rawName) : safeFileName(rawName);
             const localPath = `${RNFS.CachesDirectoryPath}/${name}`;
 
-            const exists = await RNFS.exists(localPath);
-            if (exists) await RNFS.unlink(localPath);
+            // Always download into app cache (not public folders)
+            if (await RNFS.exists(localPath)) await RNFS.unlink(localPath);
 
             const dl = RNFS.downloadFile({ fromUrl: url, toFile: localPath });
             const res = await dl.promise;
@@ -240,20 +285,47 @@ const LMSDetails = ({ route }) => {
                 throw new Error(`Download failed (${res.statusCode})`);
             }
 
+            // Branch behavior only for PDFs
+            if (ext === "pdf" && IsPdfShareble === "0") {
+                // In-app secure modal (no “Open with…”, no share)
+                setSecurePdfTitle(rawName);
+                setSecurePdfPath(localPath);
+                setSecurePdfVisible(true);
+                return;
+            }
+
+            // Existing behavior (shareable / external apps)
             await FileViewer.open(localPath, { showOpenWithDialog: true });
         } catch (e) {
             Alert.alert("Unable to open file", e?.message || "Please try again.");
         } finally {
             setOpeningFileId(null);
         }
-    }, []);
+    }, [closeSecurePdf]);
 
-    const normalizedLessons = useMemo(() => {
-        return lessons.map((l) => ({
-            ...l,
-            topics: Array.isArray(l.topics) ? l.topics : [],
-        }));
-    }, [lessons]);
+    useEffect(() => {
+        const shouldProtect = isFocused && securePdfVisible && IsPdfShareble === "0";
+
+        try {
+            RNScreenshotPrevent.enabled(shouldProtect);
+
+            if (Platform.OS === "ios" && !__DEV__) {
+                if (shouldProtect) RNScreenshotPrevent.enableSecureView();
+                else RNScreenshotPrevent.disableSecureView();
+            }
+        } catch (e) {
+            console.log("Screenshot prevent toggle error:", e);
+        }
+
+        return () => {
+            try {
+                RNScreenshotPrevent.enabled(false);
+                if (Platform.OS === "ios" && !__DEV__) {
+                    RNScreenshotPrevent.disableSecureView();
+                }
+            } catch (_) { }
+        };
+    }, [isFocused, securePdfVisible]);
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -471,6 +543,49 @@ const LMSDetails = ({ route }) => {
                     })}
                 </ScrollView>
             )}
+
+            <Modal
+                visible={securePdfVisible}
+                animationType="slide"
+                presentationStyle="fullScreen"
+                onRequestClose={closeSecurePdf}
+            >
+                <View style={{ flex: 1, backgroundColor: "#0B1220" }}>
+                    {/* Header */}
+                    <View
+                        style={{
+                            paddingTop: Platform.OS === "ios" ? 54 : 16,
+                            paddingHorizontal: 16,
+                            paddingBottom: 12,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Text style={{ color: "#fff", fontSize: 14, fontWeight: "800", flex: 1 }} numberOfLines={1}>
+                            {securePdfTitle || "Document"}
+                        </Text>
+
+                        <TouchableOpacity onPress={closeSecurePdf} style={{ padding: 8, marginLeft: 12 }}>
+                            <Ionicons name="close" size={22} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* PDF body */}
+                    {securePdfPath ? (
+                        <Pdf
+                            source={securePdfPath}
+                            onError={(err) => Alert.alert("PDF error", err?.message || "Unable to load PDF")}
+                            style={{ flex: 1 }}
+                        />
+                    ) : (
+                        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                            <ActivityIndicator size="large" />
+                            <Text style={{ marginTop: 10, color: "#cbd5e1" }}>Loading…</Text>
+                        </View>
+                    )}
+                </View>
+            </Modal>
         </View>
     );
 };
