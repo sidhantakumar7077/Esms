@@ -182,6 +182,7 @@ const Dashboard = () => {
     subject_list: [],
     teacher_list: [],
     upcomming_classes: [],
+    help_desk: {},
   });
 
   useEffect(() => {
@@ -257,11 +258,14 @@ const Dashboard = () => {
   });
 
   const helpDeskDetails = useMemo(() => {
-    const arr = defultSetting?.help_desk?.details;
-    return Array.isArray(arr) ? arr : [];
-  }, [defultSetting]);
+    const details = dashboardSection?.help_desk?.details;
+    return Array.isArray(details) ? details : [];
+  }, [dashboardSection?.help_desk]);
 
-  const helpDeskAvailable = defultSetting?.help_desk?.available === "1";
+  const helpDeskAvailable = useMemo(() => {
+    const available = dashboardSection?.help_desk?.available;
+    return available === "1" || available === 1 || available === true || available === "true";
+  }, [dashboardSection?.help_desk]);
 
   const openPhone = async (phone) => {
     if (!phone) return;
@@ -347,7 +351,13 @@ const Dashboard = () => {
 
     if (data?.status && data?.data) {
       // setNotices(data?.data);
-      setDashboardSection(data?.data);
+      // setDashboardSection(data?.data);
+      setDashboardSection(prevState => ({
+        ...prevState,
+        ...data?.data,
+        // ensure help_desk always exists even if API sends null/undefined
+        help_desk: data?.data?.help_desk || {},
+      }));
     }
     setLoading(false);
   };

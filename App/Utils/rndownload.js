@@ -55,7 +55,9 @@ const rndownloadFile = async (url) => {
     // 3) cleanup cache (optional)
     try { await ReactNativeBlobUtil.fs.unlink(res.path()); } catch (_) {}
 
-    Toast.show('Successfully Downloaded!');
+    // Human-readable location for user
+    const displayPath = `Downloads/ESMS/${fileName}`;
+    Toast.show(`Downloaded to: ${displayPath}`, Toast.LONG);
   } catch (e) {
     console.log('Download error:', e);
     Toast.show('Download failed!');
