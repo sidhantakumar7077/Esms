@@ -491,80 +491,81 @@ const Dashboard = () => {
             </View>
           ) : null}
 
-          <View
-            style={{
-              ...styles.card,
-              backgroundColor: colors.background,
-              borderColor: colors.lightBlck,
-              borderWidth: 0.5,
-              borderRadius: 12,
-              elevation: 3, // Android shadow
-              shadowColor: '#000', // iOS shadow
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              padding: 15,
-              height: 270,
-              overflow: 'hidden',
-            }}>
+          {notices.length > 0 && (
+            <View
+              style={{
+                ...styles.card,
+                backgroundColor: colors.background,
+                borderColor: colors.lightBlck,
+                borderWidth: 0.5,
+                borderRadius: 12,
+                elevation: 3, // Android shadow
+                shadowColor: '#000', // iOS shadow
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                padding: 15,
+                height: 270,
+                overflow: 'hidden',
+              }}>
 
-            <Text style={{
-              ...styles.title,
-              color: colors.text,
-              fontSize: 18,
-              fontWeight: 'bold',
-              marginBottom: 15,
-            }}>
-              Notice
-            </Text>
+              <Text style={{
+                ...styles.title,
+                color: colors.text,
+                fontSize: 18,
+                fontWeight: 'bold',
+                marginBottom: 15,
+              }}>
+                Notice
+              </Text>
 
-            <FlatList
-              data={notices}
-              style={{ flex: 1 }}
-              keyExtractor={item => item.id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={{
-                    marginBottom: 12,
-                    borderBottomWidth: 0.3,
-                    borderBottomColor: colors.lightBlck,
-                    paddingBottom: 8,
-                  }}
-                  onPress={() => NavigationService.navigate('NoticeBoard')}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Image
-                      source={Images.email}
-                      style={{
-                        height: 18,
-                        width: 18,
-                        resizeMode: 'contain',
-                        tintColor: colors.text,
-                        marginRight: 8,
-                      }}
-                    />
-                    <Text style={{ color: colors.text, fontWeight: '400' }}>
-                      {item.publish_date}
-                    </Text>
-                  </View>
-
-                  <Text
+              <FlatList
+                data={notices}
+                style={{ flex: 1 }}
+                keyExtractor={item => item.id.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    key={item.id}
                     style={{
-                      color: colors.text,
-                      fontWeight: '600',
-                      marginLeft: 26,
-                      marginTop: 2,
-                      fontSize: 14,
-                    }}>
-                    {item.day_name}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={{ paddingBottom: 10 }}
-              showsVerticalScrollIndicator={false}
-            />
-            {/*  {notices.map((item, index) => {
+                      marginBottom: 12,
+                      borderBottomWidth: 0.3,
+                      borderBottomColor: colors.lightBlck,
+                      paddingBottom: 8,
+                    }}
+                    onPress={() => NavigationService.navigate('NoticeBoard')}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Image
+                        source={Images.email}
+                        style={{
+                          height: 18,
+                          width: 18,
+                          resizeMode: 'contain',
+                          tintColor: colors.text,
+                          marginRight: 8,
+                        }}
+                      />
+                      <Text style={{ color: colors.text, fontWeight: '400' }}>
+                        {item.publish_date}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: '600',
+                        marginLeft: 26,
+                        marginTop: 2,
+                        fontSize: 14,
+                      }}>
+                      {item.day_name}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                contentContainerStyle={{ paddingBottom: 10 }}
+                showsVerticalScrollIndicator={false}
+              />
+              {/*  {notices.map((item, index) => {
                 return (
                   <TouchableOpacity
                     key={index}
@@ -591,9 +592,10 @@ const Dashboard = () => {
                   </TouchableOpacity>
                 );
               })} */}
-          </View>
+            </View>
+          )}
 
-          {userData?.type == 'student' && (
+          {userData?.type == 'student' && dashboardSection?.subject_list?.length > 0 && (
             <View
               style={{
                 ...styles.card,
@@ -694,7 +696,7 @@ const Dashboard = () => {
             </View>
           </View>
 
-          {userData?.type == 'student' && (
+          {userData?.type == 'student' && dashboardSection?.subject_list?.length > 0 && (
             <ScrollView nestedScrollEnabled={true}>
               <View
                 style={{
@@ -794,7 +796,7 @@ const Dashboard = () => {
             </ScrollView>
           )}
 
-          {userData?.type == 'student' && (
+          {userData?.type == 'student' && dashboardSection?.teacher_list?.length > 0 && (
             <View
               style={{
                 ...styles.card,

@@ -8,9 +8,9 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import BackHeader from '../Components/BackHeader';
-import {Colors} from '../Constants/Colors';
+import { Colors } from '../Constants/Colors';
 import {
   maxWidth,
   moderateScale,
@@ -18,50 +18,84 @@ import {
   screenWidth,
 } from '../Constants/PixelRatio';
 import NavigationService from '../Services/Navigation';
-import {Images} from '../Constants/Images';
-import {appStyles} from '../Constants/Fonts';
+import { Images } from '../Constants/Images';
+import { appStyles } from '../Constants/Fonts';
 import TitleHeader from '../Components/TitleHeader';
 import UseApi from '../ApiConfig';
-import {useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 import RenderHtml from 'react-native-render-html';
-import {useTheme} from '@react-navigation/native';
-import {TouchableOpacity} from 'react-native-gesture-handler';
+import { useTheme } from '@react-navigation/native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 // import RNFS from 'react-native-fs';
 // import { downloadFile } from '../Utils/DownloadFile';
 import rndownloadFile from '../Utils/rndownload';
+import FilePreviewModal from '../Components/DownloadCenter/FilePreviewModal';
+import RNFS from "react-native-fs";
+import FileViewer from "react-native-file-viewer";
 // import {basename} from 'react-native-path';
 
-let noticeData = [
-  {
-    title: 'Raksha Bandhan Holiday',
-    description:
-      'Raksha Bhandhan is a popular and traditionally Hindu annual rite or cermony that is central to a festival of the same name celebrated in South Asia.',
-    publishDate: '23/12/2023',
-    noticeDate: '26/12/2023',
-  },
-  {
-    title: 'Parents Teacher Meeting ',
-    description:
-      'Gradly to inform you that the parents teacher meeting will be held on 16 december, 2023. Kindly attend this meeting online',
-    publishDate: '16/12/2023',
-    noticeDate: '17/12/2023',
-  },
-  {
-    title: 'Parents Teacher Meeting ',
-    description:
-      'Gradly to inform you that the parents teacher meeting will be held on 16 december, 2023. Kindly attend this meeting online',
-    publishDate: '27/12/2023',
-    noticeDate: '28/12/2023',
-  },
-];
-
 const NoticeBoard = () => {
-  const {Request} = UseApi();
-  const {userData, profileData} = useSelector(state => state.User);
+  const { Request } = UseApi();
+  const { userData, profileData } = useSelector(state => state.User);
   // const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [notices, setNotices] = useState([]);
-  const {colors} = useTheme();
+  const { colors } = useTheme();
+
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
+
+  // NEW: open preview (image/pdf) in second modal
+  const openPreview = (doc) => {
+    if (!doc?.attachment) return;
+    setPreviewDoc(doc);
+    setPreviewVisible(true);
+  };
+
+  const openPdfWithFileViewer = async (url, displayName = "document.pdf") => {
+    try {
+      if (!url) {
+        Alert.alert("File missing", "This PDF link is not available.");
+        return;
+      }
+
+      // If it's already a local path, open directly
+      if (url.startsWith("file://")) {
+        const localPath = url.replace("file://", "");
+        await FileViewer.open(localPath, { showOpenWithDialog: true });
+        return;
+      }
+
+      // Remote URL: download to cache first
+      const safeName = String(displayName).replace(/[^\w.\-]/g, "_");
+      const fileName = safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`;
+      const localPath = `${RNFS.CachesDirectoryPath}/${Date.now()}_${fileName}`;
+
+      const res = await RNFS.downloadFile({ fromUrl: url, toFile: localPath }).promise;
+
+      if (res.statusCode && res.statusCode >= 400) {
+        Alert.alert("Download failed", "Unable to download the PDF file.");
+        return;
+      }
+
+      await FileViewer.open(localPath, { showOpenWithDialog: true });
+    } catch (e) {
+      console.log("openPdfWithFileViewer error:", e);
+      Alert.alert("Unable to open", "This PDF could not be opened on this device.");
+    }
+  };
+
+  const onAttachmentAction = async (doc) => {
+    const type = String(doc?.file_type || "").toLowerCase();
+
+    // PDF => open with FileViewer (native viewer)
+    if (type === "pdf") return openPdfWithFileViewer(doc?.attachment, doc?.day_name || "document.pdf");
+
+    // Image => keep your preview modal
+    if (type === "image") return openPreview(doc);
+
+    return openPreview(doc);
+  };
 
   useEffect(() => {
     getNotices();
@@ -85,7 +119,6 @@ const NoticeBoard = () => {
     }
     setLoading(false);
   };
-  
 
   return (
     <View>
@@ -100,7 +133,7 @@ const NoticeBoard = () => {
           backgroundColor: colors.background,
           width: '100%',
         }}>
-        <View style={{...appStyles.main, backgroundColor: colors.background}}>
+        <View style={{ ...appStyles.main, backgroundColor: colors.background }}>
           {/* <View style={{ flexDirection: 'row', marginTop: 15, marginLeft: 10 }}>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.headerText}>Your Notice Board is here!</Text>
@@ -141,15 +174,15 @@ const NoticeBoard = () => {
                         ...appStyles.titleRow,
                         backgroundColor: colors.lightGreen,
                       }}>
-                      <Text style={{...styles.title, color: colors.text}}>
+                      <Text style={{ ...styles.title, color: colors.text }}>
                         {item.day_name}
                       </Text>
                     </View>
-                    <View style={{paddingHorizontal: 15, paddingBottom: 15}}>
-                      <View style={{marginTop: 10}}>
+                    <View style={{ paddingHorizontal: 15, paddingBottom: 15 }}>
+                      <View style={{ marginTop: 10 }}>
                         <RenderHtml
                           contentWidth={screenWidth}
-                          source={{html: item.message}}
+                          source={{ html: item.message }}
                           tagsStyles={{
                             p: {
                               fontSize: 15,
@@ -159,21 +192,22 @@ const NoticeBoard = () => {
                           }}
                         />
                       </View>
-                      <View style={{marginTop: 35}}>
+                      <View style={{ marginTop: 35 }}>
                         {item.attachment && (
-                          <View style={{flexDirection: 'row', gap: 10}}>
+                          <View style={{ flexDirection: 'row', gap: 10 }}>
                             <TouchableOpacity
-                              onPress={() =>
-                                    Alert.alert(
-                                      "Download File",
-                                      "Do you want to download this file?",
-                                      [
-                                        { text: "Cancel", style: "cancel" },
-                                        { text: "Download", onPress: () => rndownloadFile(item.attachment) }
-                                        // { text: "Download", onPress: () => downloadFile(item.attachment) }
-                                      ]
-                                    )
-                              }
+                              onPress={() => onAttachmentAction(item)}
+                              // onPress={() =>
+                              //   Alert.alert(
+                              //     "Download File",
+                              //     "Do you want to download this file?",
+                              //     [
+                              //       { text: "Cancel", style: "cancel" },
+                              //       { text: "Download", onPress: () => rndownloadFile(item.attachment) }
+                              //       // { text: "Download", onPress: () => downloadFile(item.attachment) }
+                              //     ]
+                              //   )
+                              // }
                               style={{
                                 flexDirection: 'row',
                                 flex: 1.1,
@@ -194,13 +228,13 @@ const NoticeBoard = () => {
                                   marginLeft: 10,
                                   color: colors.primary,
                                 }}>
-                                Download Attachment
+                                Attachment
                               </Text>
                             </TouchableOpacity>
                           </View>
                         )}
-                        <View style={{flexDirection: 'row', gap: 10}}>
-                          <View style={{flexDirection: 'row', flex: 1.1}}>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <View style={{ flexDirection: 'row', flex: 1.1 }}>
                             <Image
                               source={Images.publishdate}
                               style={{
@@ -235,7 +269,7 @@ const NoticeBoard = () => {
                             gap: 10,
                             marginTop: 10,
                           }}>
-                          <View style={{flexDirection: 'row', flex: 1.1}}>
+                          <View style={{ flexDirection: 'row', flex: 1.1 }}>
                             <Image
                               source={Images.calendar}
                               style={{
@@ -273,12 +307,12 @@ const NoticeBoard = () => {
             {loading && (
               <ActivityIndicator
                 size={28}
-                style={{marginTop: screenHeight / 3}}
+                style={{ marginTop: screenHeight / 3 }}
               />
             )}
 
             {notices.length == 0 && !loading && (
-              <View style={{marginTop: screenHeight / 4, alignItems: 'center'}}>
+              <View style={{ marginTop: screenHeight / 4, alignItems: 'center' }}>
                 <Image
                   source={Images.NoDataFound}
                   style={{
@@ -288,13 +322,22 @@ const NoticeBoard = () => {
                     // marginTop:-15
                   }}
                 />
-                <Text style={{fontSize: moderateScale(14), marginTop: 10}}>
+                <Text style={{ fontSize: moderateScale(14), marginTop: 10 }}>
                   No records found!
                 </Text>
               </View>
             )}
           </View>
         </View>
+
+        {/* NEW: Second modal for Image/PDF preview */}
+        <FilePreviewModal
+          visible={previewVisible}
+          onClose={() => setPreviewVisible(false)}
+          fileType={previewDoc?.file_type || 'image'}
+          uri={previewDoc?.attachment}
+          title={previewDoc?.day_name || 'Attachment Preview'}
+        />
       </ScrollView>
     </View>
   );

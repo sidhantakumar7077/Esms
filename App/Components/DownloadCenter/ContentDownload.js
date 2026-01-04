@@ -21,9 +21,13 @@ import { useSelector } from "react-redux";
 import { useTheme } from "@react-navigation/native";
 import rndownloadFile from "../../Utils/rndownload";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import FileViewer from "react-native-file-viewer";
+import RNFS from "react-native-fs";
+
+// NEW: second modal component
+import FilePreviewModal from "./FilePreviewModal";
 
 const ContentDownload = () => {
-
     const { Request } = UseApi();
     const { colors } = useTheme();
     const { userData } = useSelector((state) => state.User);
@@ -32,6 +36,10 @@ const ContentDownload = () => {
     const [contents, setContents] = useState([]);
     const [openModal, setOpenModal] = useState(false);
     const [currMeterial, setCurrMeterial] = useState(null);
+
+    // NEW: preview modal state
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [previewDoc, setPreviewDoc] = useState(null);
 
     useEffect(() => {
         getContents();
@@ -76,18 +84,59 @@ const ContentDownload = () => {
         ]);
     };
 
+    const openPdfWithFileViewer = async (url, displayName = "document.pdf") => {
+        try {
+            if (!url) {
+                Alert.alert("File missing", "This PDF link is not available.");
+                return;
+            }
+
+            // If it's already a local path, open directly
+            if (url.startsWith("file://")) {
+                const localPath = url.replace("file://", "");
+                await FileViewer.open(localPath, { showOpenWithDialog: true });
+                return;
+            }
+
+            // Remote URL: download to cache first
+            const safeName = String(displayName).replace(/[^\w.\-]/g, "_");
+            const fileName = safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`;
+            const localPath = `${RNFS.CachesDirectoryPath}/${Date.now()}_${fileName}`;
+
+            const res = await RNFS.downloadFile({ fromUrl: url, toFile: localPath }).promise;
+
+            if (res.statusCode && res.statusCode >= 400) {
+                Alert.alert("Download failed", "Unable to download the PDF file.");
+                return;
+            }
+
+            await FileViewer.open(localPath, { showOpenWithDialog: true });
+        } catch (e) {
+            console.log("openPdfWithFileViewer error:", e);
+            Alert.alert("Unable to open", "This PDF could not be opened on this device.");
+        }
+    };
+
+    // NEW: open preview (image/pdf) in second modal
+    const openPreview = (doc) => {
+        // console.log("Source", doc?.src);
+        if (!doc?.src) return;
+        setPreviewDoc(doc);
+        setPreviewVisible(true);
+    };
+
     /**
-     * LMS-like icon themes (2 types)
-     * - DOC: document icon with green-ish palette
-     * - VIDEO: videocam icon with primary palette
+     * UPDATED icon themes:
+     * - VIDEO: open in browser (your existing behavior)
+     * - IMAGE/PDF: open preview modal (new)
+     * - fallback: download
      */
     const getAttachmentTheme = (doc) => {
         const type = String(doc?.file_type || "").toLowerCase();
-        const isVideo = type === "video";
 
-        if (isVideo) {
+        if (type === "video") {
             return {
-                isVideo: true,
+                kind: "video",
                 bg: "#EEF2FF",
                 fg: "#4F46E5",
                 dot: "#4F46E5",
@@ -98,8 +147,35 @@ const ContentDownload = () => {
             };
         }
 
+        if (type === "image") {
+            return {
+                kind: "image",
+                bg: "#FFF7ED",
+                fg: "#EA580C",
+                dot: "#EA580C",
+                icon: "image-outline",
+                actionIcon: "eye-outline",
+                actionBg: colors.background,
+                actionFg: colors.text,
+            };
+        }
+
+        if (type === "pdf") {
+            return {
+                kind: "pdf",
+                bg: "#FEF2F2",
+                fg: "#DC2626",
+                dot: "#DC2626",
+                icon: "document-text-outline",
+                actionIcon: "eye-outline",
+                actionBg: colors.background,
+                actionFg: colors.text,
+            };
+        }
+
+        // fallback: download behavior (same as your older non-video logic)
         return {
-            isVideo: false,
+            kind: "file",
             bg: "#ECFDF5",
             fg: "#059669",
             dot: "#059669",
@@ -108,6 +184,20 @@ const ContentDownload = () => {
             actionBg: colors.background,
             actionFg: colors.text,
         };
+    };
+
+    const onAttachmentAction = async (doc) => {
+        const type = String(doc?.file_type || "").toLowerCase();
+
+        if (type === "video") return openInBrowser(doc?.src);
+
+        // PDF => open with FileViewer (native viewer)
+        if (type === "pdf") return openPdfWithFileViewer(doc?.src, doc?.real_name || "document.pdf");
+
+        // Image => keep your preview modal
+        if (type === "image") return openPreview(doc);
+
+        return onDownloadPress(doc?.src);
     };
 
     return (
@@ -133,10 +223,23 @@ const ContentDownload = () => {
                                 }}
                             >
                                 {/* Card header (unchanged) */}
-                                <View style={{ ...appStyles.titleRow, backgroundColor: colors.lightGreen }}>
-                                    <Text style={{ ...TextStyles.title2, color: colors.text }}>{item.title}</Text>
+                                <View
+                                    style={{
+                                        ...appStyles.titleRow,
+                                        backgroundColor: colors.lightGreen,
+                                    }}
+                                >
+                                    <Text style={{ ...TextStyles.title2, color: colors.text }}>
+                                        {item.title}
+                                    </Text>
 
-                                    <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 2 }}>
+                                    <View
+                                        style={{
+                                            flexDirection: "row",
+                                            justifyContent: "center",
+                                            marginTop: 2,
+                                        }}
+                                    >
                                         <TouchableOpacity
                                             onPress={() => {
                                                 setOpenModal(true);
@@ -145,7 +248,11 @@ const ContentDownload = () => {
                                         >
                                             <Image
                                                 source={Images.eye}
-                                                style={{ height: 20, width: 20, tintColor: colors.text }}
+                                                style={{
+                                                    height: 20,
+                                                    width: 20,
+                                                    tintColor: colors.text,
+                                                }}
                                             />
                                         </TouchableOpacity>
                                     </View>
@@ -153,19 +260,27 @@ const ContentDownload = () => {
 
                                 <View style={{ padding: 15, paddingTop: 5 }}>
                                     <View style={appStyles.itmRow}>
-                                        <Text style={{ ...TextStyles.keyText, color: colors.text }}>Share Date</Text>
-                                        <Text style={{ ...TextStyles.valueText, color: colors.text }}>{item.share_date}</Text>
+                                        <Text style={{ ...TextStyles.keyText, color: colors.text }}>
+                                            Share Date
+                                        </Text>
+                                        <Text style={{ ...TextStyles.valueText, color: colors.text }}>
+                                            {item.share_date}
+                                        </Text>
                                     </View>
 
                                     <View style={appStyles.itmRow}>
-                                        <Text style={{ ...TextStyles.keyText, color: colors.text }}>Valid Upto</Text>
+                                        <Text style={{ ...TextStyles.keyText, color: colors.text }}>
+                                            Valid Upto
+                                        </Text>
                                         <Text style={{ ...TextStyles.valueText, color: colors.text }}>
                                             {item.valid_upto || "NA"}
                                         </Text>
                                     </View>
 
                                     <View style={appStyles.itmRow}>
-                                        <Text style={{ ...TextStyles.keyText, color: colors.text }}>Share By</Text>
+                                        <Text style={{ ...TextStyles.keyText, color: colors.text }}>
+                                            Share By
+                                        </Text>
                                         <Text style={{ ...TextStyles.valueText, color: colors.text }}>
                                             {item.share_by || "NA"}
                                         </Text>
@@ -176,7 +291,7 @@ const ContentDownload = () => {
                     })}
                 </View>
 
-                {/* Modal */}
+                {/* First Modal (existing) */}
                 <Modal
                     visible={openModal}
                     transparent
@@ -186,27 +301,52 @@ const ContentDownload = () => {
                 >
                     <View style={styles.modalOverlay}>
                         {/* Tap outside to close */}
-                        <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpenModal(false)} />
+                        <Pressable
+                            style={StyleSheet.absoluteFill}
+                            onPress={() => setOpenModal(false)}
+                        />
 
                         <View style={[styles.sheet, { backgroundColor: colors.background }]}>
                             {/* Handle */}
                             <View style={styles.handleWrap}>
-                                <View style={[styles.handle, { backgroundColor: colors.lightBlck }]} />
+                                <View
+                                    style={[styles.handle, { backgroundColor: colors.lightBlck }]}
+                                />
                             </View>
 
                             {/* Header */}
-                            <View style={styles.header}>
+                            {/* <View style={styles.header}>
                                 <View style={styles.headerLeft}>
-                                    <View style={[styles.headerIcon, { borderColor: colors.lightBlck, backgroundColor: colors.lightGreen }]}>
-                                        <Ionicons name="folder-open-outline" size={20} color={colors.text} />
+                                    <View
+                                        style={[
+                                            styles.headerIcon,
+                                            {
+                                                borderColor: colors.lightBlck,
+                                                backgroundColor: colors.lightGreen,
+                                            },
+                                        ]}
+                                    >
+                                        <Ionicons
+                                            name="folder-open-outline"
+                                            size={20}
+                                            color={colors.text}
+                                        />
                                     </View>
 
                                     <View style={{ flex: 1 }}>
-                                        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={2}>
+                                        <Text
+                                            style={[styles.headerTitle, { color: colors.text }]}
+                                            numberOfLines={2}
+                                        >
                                             {currMeterial?.title || "Content"}
                                         </Text>
-                                        <Text style={[styles.headerSub, { color: colors.text }]} numberOfLines={1}>
-                                            {currMeterial?.share_by ? `Shared by ${currMeterial.share_by}` : "—"}
+                                        <Text
+                                            style={[styles.headerSub, { color: colors.text }]}
+                                            numberOfLines={1}
+                                        >
+                                            {currMeterial?.share_by
+                                                ? `Shared by ${currMeterial.share_by}`
+                                                : "—"}
                                         </Text>
                                     </View>
                                 </View>
@@ -220,49 +360,117 @@ const ContentDownload = () => {
                                         style={{ height: 12, width: 12, tintColor: colors.text }}
                                     />
                                 </TouchableOpacity>
-                            </View>
+                            </View> */}
 
                             {/* Body */}
-                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 18 }}>
-                                {/* Description (keep as-is) */}
+                            <ScrollView
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={{ paddingBottom: 18 }}
+                            >
+                                {/* Title */}
+                                <View style={styles.header}>
+                                    <Text
+                                        style={[styles.headerTitle, { color: colors.text }]}
+                                        numberOfLines={2}
+                                    >
+                                        {currMeterial?.title || "Content"}
+                                    </Text>
+                                </View>
+                                {/* Description */}
                                 {currMeterial?.description?.trim() ? (
-                                    <View style={[styles.attachCard, { borderColor: colors.lightBlck }]}>
-                                        <View style={[styles.attachHeader, { backgroundColor: colors.lightGreen, borderColor: colors.lightBlck }]}>
+                                    <View
+                                        style={[styles.attachCard, { borderColor: colors.lightBlck }]}
+                                    >
+                                        <View
+                                            style={[
+                                                styles.attachHeader,
+                                                {
+                                                    backgroundColor: colors.lightGreen,
+                                                    borderColor: colors.lightBlck,
+                                                },
+                                            ]}
+                                        >
                                             <View style={styles.attachHeaderLeft}>
-                                                <Ionicons name="attach-outline" size={16} color={colors.text} />
-                                                <Text style={[styles.attachHeaderTitle, { color: colors.text }]}>Attachments</Text>
+                                                <Ionicons
+                                                    name="attach-outline"
+                                                    size={16}
+                                                    color={colors.text}
+                                                />
+                                                <Text
+                                                    style={[
+                                                        styles.attachHeaderTitle,
+                                                        { color: colors.text },
+                                                    ]}
+                                                >
+                                                    Description
+                                                </Text>
                                             </View>
                                         </View>
-                                        <View style={[styles.attachBody, { backgroundColor: colors.background }]}>
-                                            <Text style={[styles.sectionText, { color: colors.text, marginTop: 8 }]}>
+                                        <View
+                                            style={[
+                                                styles.attachBody,
+                                                { backgroundColor: colors.background },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.sectionText,
+                                                    { color: colors.text, marginTop: 8 },
+                                                ]}
+                                            >
                                                 {currMeterial.description}
                                             </Text>
                                         </View>
                                     </View>
                                 ) : null}
 
-                                {/* Attachments (UPDATED HEADER STYLE + LMS ICONS) */}
+                                {/* Attachments list */}
                                 <View style={[styles.attachCard, { borderColor: colors.lightBlck }]}>
-                                    {/* Header like your screenshot */}
-                                    <View style={[styles.attachHeader, { backgroundColor: colors.lightGreen, borderColor: colors.lightBlck }]}>
+                                    <View
+                                        style={[
+                                            styles.attachHeader,
+                                            {
+                                                backgroundColor: colors.lightGreen,
+                                                borderColor: colors.lightBlck,
+                                            },
+                                        ]}
+                                    >
                                         <View style={styles.attachHeaderLeft}>
-                                            <Ionicons name="attach-outline" size={16} color={colors.text} />
-                                            <Text style={[styles.attachHeaderTitle, { color: colors.text }]}>Attachments</Text>
+                                            <Ionicons
+                                                name="attach-outline"
+                                                size={16}
+                                                color={colors.text}
+                                            />
+                                            <Text
+                                                style={[
+                                                    styles.attachHeaderTitle,
+                                                    { color: colors.text },
+                                                ]}
+                                            >
+                                                Attachments
+                                            </Text>
                                         </View>
 
                                         <View
                                             style={[
                                                 styles.countBadge,
-                                                { backgroundColor: colors.background, borderColor: colors.lightBlck },
+                                                {
+                                                    backgroundColor: colors.background,
+                                                    borderColor: colors.lightBlck,
+                                                },
                                             ]}
                                         >
-                                            <Text style={[styles.countBadgeText, { color: colors.text }]}>
+                                            <Text
+                                                style={[
+                                                    styles.countBadgeText,
+                                                    { color: colors.text },
+                                                ]}
+                                            >
                                                 {(currMeterial?.upload_doc || []).length}
                                             </Text>
                                         </View>
                                     </View>
 
-                                    {/* Body */}
                                     <View style={[styles.attachBody, { backgroundColor: colors.background }]}>
                                         {(currMeterial?.upload_doc || []).map((doc, idx) => {
                                             const theme = getAttachmentTheme(doc);
@@ -272,29 +480,50 @@ const ContentDownload = () => {
                                                     key={`${doc?.id || idx}`}
                                                     style={[
                                                         styles.attachmentRow,
-                                                        { borderColor: colors.lightBlck, backgroundColor: colors.background },
+                                                        {
+                                                            borderColor: colors.lightBlck,
+                                                            backgroundColor: colors.background,
+                                                        },
                                                     ]}
                                                 >
-                                                    {/* LEFT LMS-LIKE ICON */}
+                                                    {/* LEFT ICON */}
                                                     <View style={styles.attachmentLeft}>
                                                         <View
                                                             style={[
                                                                 styles.lmsIcon,
-                                                                { backgroundColor: theme.bg, borderColor: colors.lightBlck },
+                                                                {
+                                                                    backgroundColor: theme.bg,
+                                                                    borderColor: colors.lightBlck,
+                                                                },
                                                             ]}
                                                         >
-                                                            <Ionicons name={theme.icon} size={20} color={theme.fg} />
-                                                            <View style={[styles.lmsDot, { backgroundColor: theme.dot }]} />
+                                                            <Ionicons
+                                                                name={theme.icon}
+                                                                size={20}
+                                                                color={theme.fg}
+                                                            />
+                                                            <View
+                                                                style={[
+                                                                    styles.lmsDot,
+                                                                    { backgroundColor: theme.dot },
+                                                                ]}
+                                                            />
                                                         </View>
 
                                                         <View style={{ flex: 1 }}>
-                                                            <Text style={[styles.fileTitle, { color: colors.text }]} numberOfLines={2}>
+                                                            <Text
+                                                                style={[
+                                                                    styles.fileTitle,
+                                                                    { color: colors.text },
+                                                                ]}
+                                                                numberOfLines={2}
+                                                            >
                                                                 {doc?.real_name || "Untitled"}
                                                             </Text>
                                                         </View>
                                                     </View>
 
-                                                    {/* RIGHT ACTION (icon button) */}
+                                                    {/* RIGHT ACTION */}
                                                     <TouchableOpacity
                                                         style={[
                                                             styles.actionPill,
@@ -303,24 +532,26 @@ const ContentDownload = () => {
                                                                 borderColor: colors.lightBlck,
                                                             },
                                                         ]}
-                                                        onPress={() => {
-                                                            if (theme.isVideo) openInBrowser(doc?.src);
-                                                            else onDownloadPress(doc?.src);
-                                                        }}
+                                                        onPress={() => onAttachmentAction(doc)}
                                                     >
-                                                        <Ionicons name={theme.actionIcon} size={20} color={theme.actionFg} />
+                                                        <Ionicons
+                                                            name={theme.actionIcon}
+                                                            size={20}
+                                                            color={theme.actionFg}
+                                                        />
                                                     </TouchableOpacity>
                                                 </View>
                                             );
                                         })}
 
-                                        {(!currMeterial?.upload_doc || currMeterial.upload_doc.length === 0) ? (
-                                            <View style={[styles.emptyState, { borderColor: colors.lightBlck }]}>
-                                                <Text style={[styles.sectionText, { color: colors.text }]}>
-                                                    No attachments found.
-                                                </Text>
-                                            </View>
-                                        ) : null}
+                                        {(!currMeterial?.upload_doc ||
+                                            currMeterial.upload_doc.length === 0) && (
+                                                <View style={[styles.emptyState, { borderColor: colors.lightBlck }]}>
+                                                    <Text style={[styles.sectionText, { color: colors.text }]}>
+                                                        No attachments found.
+                                                    </Text>
+                                                </View>
+                                            )}
                                     </View>
                                 </View>
                             </ScrollView>
@@ -338,7 +569,18 @@ const ContentDownload = () => {
                     </View>
                 </Modal>
 
-                {loading && <ActivityIndicator size={28} style={{ marginTop: screenHeight / 3 }} />}
+                {/* NEW: Second modal for Image/PDF preview */}
+                <FilePreviewModal
+                    visible={previewVisible}
+                    onClose={() => setPreviewVisible(false)}
+                    fileType={previewDoc?.file_type}
+                    uri={previewDoc?.src}
+                    title={previewDoc?.real_name}
+                />
+
+                {loading && (
+                    <ActivityIndicator size={28} style={{ marginTop: screenHeight / 3 }} />
+                )}
 
                 {!loading && contents.length === 0 && (
                     <View style={{ marginTop: screenHeight / 4, alignItems: "center" }}>
@@ -350,7 +592,13 @@ const ContentDownload = () => {
                                 opacity: 0.5,
                             }}
                         />
-                        <Text style={{ fontSize: moderateScale(14), marginTop: 10, color: colors.text }}>
+                        <Text
+                            style={{
+                                fontSize: moderateScale(14),
+                                marginTop: 10,
+                                color: colors.text,
+                            }}
+                        >
                             No records found!
                         </Text>
                     </View>
@@ -414,7 +662,7 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: moderateScale(16),
-        fontWeight: "900",
+        fontWeight: "500",
         lineHeight: moderateScale(22),
     },
     headerSub: {
@@ -431,18 +679,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    section: {
-        marginTop: 12,
-        marginHorizontal: 16,
-        borderWidth: 0.5,
-        borderRadius: 16,
-        padding: 14,
-    },
-    sectionTitle: {
-        fontSize: moderateScale(13),
-        fontWeight: "900",
-        marginBottom: 8,
-    },
     sectionText: {
         fontSize: moderateScale(12),
         lineHeight: moderateScale(18),
@@ -450,7 +686,6 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
 
-    /* UPDATED ATTACHMENTS CARD */
     attachCard: {
         marginTop: 12,
         marginHorizontal: 16,
@@ -510,7 +745,6 @@ const styles = StyleSheet.create({
         paddingRight: 10,
     },
 
-    /* LMS-like icon */
     lmsIcon: {
         width: 42,
         height: 42,
@@ -535,11 +769,6 @@ const styles = StyleSheet.create({
         fontSize: moderateScale(13),
         fontWeight: "900",
         lineHeight: moderateScale(18),
-    },
-    fileSub: {
-        marginTop: 4,
-        fontSize: moderateScale(10),
-        opacity: 0.6,
     },
 
     actionPill: {
