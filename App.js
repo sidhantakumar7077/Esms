@@ -31,6 +31,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import UseApi from './App/ApiConfig';
 import { LightTheme, CustomDarkTheme } from './App/Components/ThemeContext';
 
+// Pages
+import LMSDetails from './App/Screen/LMS/LMSDetails';
+import LMS from './App/Screen/LMS/Index';
+
 export const GOOGLE_MAPS_APIKEY = "AIzaSyDPTHOYE5ZFGDIYxVsiJmOwMn9sHx0iYQA";
 
 const Stack = createStackNavigator();
@@ -282,6 +286,8 @@ const App = () => {
           ) : (
             <Stack.Screen name="AppStack" component={AppStack} />
           )}
+          <Stack.Screen name="LMS" component={LMS} />
+          <Stack.Screen name="LMSDetails" component={LMSDetails} />
         </Stack.Navigator>
       </NavigationContainer>
       {/* </Theme.Provider> */}

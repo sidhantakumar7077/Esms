@@ -694,7 +694,7 @@ const LMSDetails = ({ route }) => {
                                 key={securePdfPath || "pdf"}   // forces reset when opening a new pdf
                                 initialZoom={1}
                                 minZoom={1}
-                                maxZoom={4}
+                                maxZoom={2}
                                 zoomStep={0.5}
                                 bindToBorders={true}
                                 captureEvent={true}           // recommended in Modals
