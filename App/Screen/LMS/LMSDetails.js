@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     RefreshControl,
     ScrollView,
+    FlatList,
     StyleSheet,
     Text,
     UIManager,
@@ -26,7 +27,7 @@ import NavigationService from "../../Services/Navigation";
 import { useSelector } from "react-redux";
 import { useTheme, useIsFocused } from "@react-navigation/native";
 import RNScreenshotPrevent from "react-native-screenshot-prevent";
-import { Pdf } from "react-native-pdf-light";
+import { PdfUtil, PdfView } from "react-native-pdf-light";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -104,6 +105,11 @@ const LMSDetails = ({ route }) => {
     const [securePdfVisible, setSecurePdfVisible] = useState(false);
     const [securePdfPath, setSecurePdfPath] = useState("");
     const [securePdfTitle, setSecurePdfTitle] = useState("");
+
+    const [pdfPages, setPdfPages] = useState([]);   // ✅ all page indexes
+    const [pdfZoom, setPdfZoom] = useState(1);
+    const [pdfTotal, setPdfTotal] = useState(0);
+    const [pdfSizes, setPdfSizes] = useState([]); // optional (for aspect ratio)
 
     useEffect(() => {
         const v = Number(defultSetting?.lms_file_download ?? 1); // default = 1
@@ -293,6 +299,18 @@ const LMSDetails = ({ route }) => {
 
                 // PDF + NOT shareable => open secure modal
                 if (ext === "pdf" && shareFlag === 0) {
+                    const total = await PdfUtil.getPageCount(localPath);
+                    setPdfTotal(total);
+                    setPdfPages(Array.from({ length: total }, (_, i) => i)); // ✅ 0..total-1
+                    setPdfZoom(1);
+
+                    try {
+                        const sizes = await PdfUtil.getPageSizes(localPath);
+                        setPdfSizes(Array.isArray(sizes) ? sizes : []);
+                    } catch (_) {
+                        setPdfSizes([]);
+                    }
+
                     setSecurePdfTitle(rawName);
                     setSecurePdfPath(localPath);
                     setSecurePdfVisible(true);
@@ -580,11 +598,86 @@ const LMSDetails = ({ route }) => {
 
                     {/* PDF body */}
                     {securePdfPath ? (
-                        <Pdf
-                            source={securePdfPath}
-                            onError={(err) => Alert.alert("PDF error", err?.message || "Unable to load PDF")}
-                            style={{ flex: 1 }}
-                        />
+                        <View style={{ flex: 1 }}>
+                            {/* Zoom toolbar */}
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    paddingHorizontal: 12,
+                                    paddingBottom: 10,
+                                }}
+                            >
+                                <Text style={{ color: "#fff", fontWeight: "800" }}>
+                                    {pdfTotal ? `${pdfTotal} pages` : "Document"}
+                                </Text>
+
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setPdfZoom((z) => Math.max(1, Number((z - 0.25).toFixed(2))))}
+                                        disabled={pdfZoom <= 1}
+                                        style={{ padding: 8, opacity: pdfZoom <= 1 ? 0.35 : 1 }}
+                                    >
+                                        <Ionicons name="remove" size={20} color="#fff" />
+                                    </TouchableOpacity>
+
+                                    <Text style={{ color: "#fff", fontWeight: "800", minWidth: 52, textAlign: "center" }}>
+                                        {Math.round(pdfZoom * 100)}%
+                                    </Text>
+
+                                    <TouchableOpacity
+                                        onPress={() => setPdfZoom((z) => Math.min(3, Number((z + 0.25).toFixed(2))))}
+                                        disabled={pdfZoom >= 3}
+                                        style={{ padding: 8, opacity: pdfZoom >= 3 ? 0.35 : 1 }}
+                                    >
+                                        <Ionicons name="add" size={20} color="#fff" />
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity onPress={() => setPdfZoom(1)} style={{ padding: 8 }}>
+                                        <Ionicons name="refresh" size={20} color="#fff" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* All pages vertically */}
+                            <FlatList
+                                data={pdfPages}
+                                keyExtractor={(p) => String(p)}
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
+                                initialNumToRender={3}
+                                windowSize={7}
+                                removeClippedSubviews
+                                renderItem={({ item: pageIndex }) => {
+                                    const s = pdfSizes?.[pageIndex];
+                                    const ratio = s?.width ? s.height / s.width : 1.414; // fallback ~A4
+
+                                    const baseW = Math.max(240, width - 24);
+                                    const viewW = baseW * pdfZoom;
+                                    const viewH = baseW * ratio * pdfZoom;
+
+                                    return (
+                                        <View style={{ marginBottom: 14 }}>
+                                            {/* Horizontal pan when zoomed */}
+                                            <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}>
+                                                <PdfView
+                                                    source={securePdfPath}
+                                                    page={pageIndex}               // ✅ 0-based page index
+                                                    resizeMode="contain"
+                                                    style={{
+                                                        width: viewW,
+                                                        height: viewH,
+                                                        backgroundColor: "#0B1220",
+                                                        borderRadius: 10,
+                                                    }}
+                                                />
+                                            </ScrollView>
+                                        </View>
+                                    );
+                                }}
+                            />
+                        </View>
                     ) : (
                         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
                             <ActivityIndicator size="large" />
