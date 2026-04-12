@@ -340,7 +340,12 @@ const Dashboard = () => {
       // id: userData?.id,
       class_id: userData?.class_id,
       section_id: userData?.section_id,
+      type: 1,
+      student_session_id: userData?.student_session_id,
     };
+
+    // console.log("object", params);
+    // return;
 
     let data;
     try {
