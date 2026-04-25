@@ -34,6 +34,7 @@ import { LightTheme, CustomDarkTheme } from './App/Components/ThemeContext';
 // Pages
 import LMSDetails from './App/Screen/LMS/LMSDetails';
 import LMS from './App/Screen/LMS/Index';
+import HomeworkV2 from './App/Screen/Homework/HomeworkV2';
 
 export const GOOGLE_MAPS_APIKEY = "AIzaSyDPTHOYE5ZFGDIYxVsiJmOwMn9sHx0iYQA";
 
@@ -288,6 +289,7 @@ const App = () => {
           )}
           <Stack.Screen name="LMS" component={LMS} />
           <Stack.Screen name="LMSDetails" component={LMSDetails} />
+          <Stack.Screen name="HomeworkV2" component={HomeworkV2} />
         </Stack.Navigator>
       </NavigationContainer>
       {/* </Theme.Provider> */}
