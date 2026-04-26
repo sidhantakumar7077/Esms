@@ -704,9 +704,9 @@ const styles = StyleSheet.create({
 
     dateValue: {
         marginTop: moderateScale(3),
-        fontSize: moderateScale(15),
+        fontSize: moderateScale(14),
         color: '#111827',
-        fontWeight: '900',
+        fontWeight: '600',
     },
 
     changeDateBox: {
@@ -792,9 +792,10 @@ const styles = StyleSheet.create({
     },
 
     topicTitle: {
-        fontSize: moderateScale(13.5),
+        fontSize: moderateScale(14),
         color: '#0F172A',
-        fontWeight: '900',
+        fontWeight: '600',
+        textTransform: 'capitalize',
     },
 
     postedDate: {

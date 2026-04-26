@@ -81,8 +81,8 @@ android {
         applicationId "com.esms.scriptlab"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 23
-        versionName "2.0.6"
+        versionCode 24
+        versionName "2.0.7"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
