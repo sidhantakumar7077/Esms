@@ -32,8 +32,8 @@ const UseApi = () => {
     return new Promise((resolve, reject) => {
       xmlRequest.open(method, url, true);
 
-      // xmlRequest.setRequestHeader('Accept', '*/*');
-      xmlRequest.setRequestHeader('X-API-Key', '123123');
+      xmlRequest.setRequestHeader('Accept', 'application/json');
+      xmlRequest.setRequestHeader('X-API-KEY', '123123');
       // xmlRequest.setRequestHeader('Content-Type', 'application/json');
       // xmlRequest.setRequestHeader('Content-Type', 'multipart/form-data');
       // console.log('token....', token);
