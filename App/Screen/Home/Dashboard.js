@@ -250,6 +250,7 @@ const Dashboard = () => {
       { iterations: 2 },
     ).start();
     console.log('animation stopped...');
+    NavigationService.navigate('Notification');
   };
 
   const spin = rotationAnimation.interpolate({
@@ -394,31 +395,34 @@ const Dashboard = () => {
             }}
           />
         </Pressable> */}
-        <TouchableOpacity
-          onPress={() => setShowChangePassword(true)}
-        // onPress={shakeBell}
-        >
-          {/* <Image
-                        source={Images.notificationBell}
-                        style={{
-                            height: 30,
-                            width: 30,
-                            // tintColor:Colors.white2
-                        }}
-                    /> */}
-          <Animated.View
-            // style={{ transform: [{ translateX: shakeAnimation }] }}
-            style={{ transform: [{ scale: scaleAnimation }, { rotate: spin }] }}>
-            <Image
-              source={Images.padlock}
-              style={{
-                height: 30,
-                width: 30,
-                tintColor: colors.text,
-              }}
-            />
-          </Animated.View>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', columnGap: 15 }}>
+          <TouchableOpacity onPress={shakeBell}>
+            <Animated.View
+              // style={{ transform: [{ translateX: shakeAnimation }] }}
+              style={{ transform: [{ scale: scaleAnimation }, { rotate: spin }] }}>
+              <Image
+                source={Images.notificationBell}
+                style={{
+                  height: 32,
+                  width: 32,
+                  // tintColor:Colors.white2
+                }}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowChangePassword(true)}>
+            <Animated.View>
+              <Image
+                source={Images.padlock}
+                style={{
+                  height: 28,
+                  width: 28,
+                  tintColor: colors.text,
+                }}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
       </View>
       <ScrollView style={{ width: '99%', alignSelf: 'center', maxWidth: maxWidth, marginBottom: 50 }} nestedScrollEnabled={true}>
         <View
