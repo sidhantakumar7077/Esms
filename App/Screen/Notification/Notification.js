@@ -215,7 +215,7 @@ const Notification = () => {
             <BackHeader
                 title="Notification"
                 onBackIconPress={() => {
-                    NavigationService.goBack();
+                    NavigationService.back();
                 }}
             />
 
