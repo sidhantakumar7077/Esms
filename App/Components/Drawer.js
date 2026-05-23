@@ -527,14 +527,19 @@ const DrawerContent = props => {
         { id: '13', name: 'Examination', displayName: 'Examination', image: Images.syllabus, route: 'Examination' },
         { id: '14', name: 'Video Tutorial', displayName: 'Video Tutorial', image: Images.zoom, route: 'VideoTutorial' },
         { id: '15', name: 'LMS', displayName: 'LMS', image: Images.downloads, route: 'LMS' },
-
-        // New Homework page
         {
             id: '16',
             name: 'HomeworkV2',
             displayName: 'Homework',
             image: Images.homework,
             route: 'HomeworkV2',
+        },
+        {
+            id: '17',
+            name: 'Holiday List',
+            displayName: 'Holiday List',
+            image: Images.timetable,
+            route: 'HolidayList',
         },
 
         // Driver optional menu
@@ -551,7 +556,6 @@ const DrawerContent = props => {
         { id: '1', menu_name: 'Dashboard' },
         { id: '2', menu_name: 'Profile' },
         { id: '3', menu_name: 'Homework' },
-        { id: '16', menu_name: 'HomeworkV2' },
         { id: '4', menu_name: 'Daily Assignment' },
         { id: '5', menu_name: 'Lesson Plan' },
         { id: '6', menu_name: 'Class Timetable' },
@@ -561,8 +565,6 @@ const DrawerContent = props => {
         { id: '11', menu_name: 'Download Center' },
         { id: '12', menu_name: 'Teacher Review' },
         { id: '13', menu_name: 'Examination' },
-        { id: '14', menu_name: 'Video Tutorial' },
-        { id: '15', menu_name: 'LMS' },
     ];
 
     const studentMenuBase = [
@@ -570,6 +572,7 @@ const DrawerContent = props => {
         '2',
         '3',
         '16',
+        '17',
         '4',
         '5',
         '6',
@@ -603,39 +606,72 @@ const DrawerContent = props => {
             onItemPress: onConfirmLogout,
         };
 
-        const serverModules =
-            defultSetting?.app_modules && defultSetting.app_modules.length > 0
-                ? defultSetting.app_modules
-                : defaultMenu;
-
+        /**
+         * If backend API has issue, app_modules is null, undefined, empty,
+         * or not an array, then show only defaultMenu.
+         */
         const hasServerModules =
-            defultSetting?.app_modules && defultSetting.app_modules.length > 0;
+            Array.isArray(defultSetting?.app_modules) &&
+            defultSetting.app_modules.length > 0;
+
+        const serverModules = hasServerModules
+            ? defultSetting.app_modules
+            : defaultMenu;
 
         const allowedIdSet = new Set(
-            serverModules.map(m => String(m?.id || '').trim()),
+            serverModules
+                .map(m => String(m?.id || '').trim())
+                .filter(Boolean),
         );
 
         const allowedNameSet = new Set(
-            serverModules.map(m => String(m?.menu_name || '').trim()),
+            serverModules
+                .map(m => String(m?.menu_name || '').trim())
+                .filter(Boolean),
         );
 
-        const baseIds = userData?.type === 'driver' ? driverMenuBase : studentMenuBase;
+        /**
+         * Important:
+         * When server modules are available, use full studentMenuBase.
+         * When server modules are missing, use only defaultMenu ids.
+         */
+        const defaultIds = defaultMenu.map(item => String(item.id));
+
+        const baseIds =
+            userData?.type === 'driver'
+                ? driverMenuBase
+                : hasServerModules
+                    ? studentMenuBase
+                    : defaultIds;
 
         const filtered = baseIds
             .filter(id => {
-                if (!hasServerModules) {
-                    return true;
-                }
-
                 const meta = allMenuItems.find(mi => String(mi.id) === String(id));
 
-                // Main check by id
-                if (allowedIdSet.has(String(id))) {
+                /**
+                 * Fallback condition:
+                 * If API modules are empty/null/issue, show default menu directly.
+                 */
+                if (!hasServerModules) {
+                    return defaultIds.includes(String(id));
+                }
+
+                /**
+                 * If server sends id, match only by id.
+                 * This prevents id 16 Homework from also showing old id 3 Homework.
+                 */
+                if (allowedIdSet.size > 0) {
+                    return allowedIdSet.has(String(id));
+                }
+
+                /**
+                 * Fallback only for old API where id is not coming.
+                 */
+                if (meta?.name && allowedNameSet.has(meta.name)) {
                     return true;
                 }
 
-                // Fallback check by menu_name for old APIs without id
-                if (meta?.name && allowedNameSet.has(meta.name)) {
+                if (meta?.displayName && allowedNameSet.has(meta.displayName)) {
                     return true;
                 }
 
@@ -655,37 +691,45 @@ const DrawerContent = props => {
             });
 
         /**
-         * Append modules sent by server that are not in baseIds.
-         * This is useful if server adds a new module later.
+         * Append server modules only when backend sends valid app_modules.
+         * Do not append anything in fallback mode.
          */
         if (hasServerModules) {
             serverModules.forEach(m => {
                 const id = String(m?.id || '').trim();
                 const menuName = String(m?.menu_name || '').trim();
 
-                const already = filtered.find(x => String(x.id) === id);
+                const alreadyById = filtered.find(x => String(x.id) === id);
+                const alreadyByName = filtered.find(x => x.name === menuName);
 
-                if (!already) {
-                    let meta = null;
+                if (alreadyById || alreadyByName) {
+                    return;
+                }
 
-                    if (id) {
-                        meta = allMenuItems.find(mi => String(mi.id) === id);
-                    }
+                let meta = null;
 
-                    if (!meta && menuName) {
-                        meta = allMenuItems.find(mi => mi.name === menuName);
-                    }
+                if (id) {
+                    meta = allMenuItems.find(mi => String(mi.id) === id);
+                }
 
-                    if (meta) {
-                        filtered.push({
-                            id: meta.id,
-                            name: meta?.displayName || meta?.name || menuName,
-                            image: meta?.image || { uri: LOCAL_FALLBACK_ICON },
-                            onItemPress: meta?.route
-                                ? () => NavigationService.navigate(meta.route)
-                                : () => { },
-                        });
-                    }
+                /**
+                 * Use menu name fallback only when id is not available.
+                 */
+                if (!meta && !id && menuName) {
+                    meta = allMenuItems.find(
+                        mi => mi.name === menuName || mi.displayName === menuName,
+                    );
+                }
+
+                if (meta) {
+                    filtered.push({
+                        id: meta.id,
+                        name: meta.displayName || meta.name || menuName,
+                        image: meta.image || { uri: LOCAL_FALLBACK_ICON },
+                        onItemPress: meta.route
+                            ? () => NavigationService.navigate(meta.route)
+                            : () => { },
+                    });
                 }
             });
         }

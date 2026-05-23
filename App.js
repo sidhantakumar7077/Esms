@@ -36,6 +36,7 @@ import LMSDetails from './App/Screen/LMS/LMSDetails';
 import LMS from './App/Screen/LMS/Index';
 import HomeworkV2 from './App/Screen/Homework/HomeworkV2';
 import Notification from './App/Screen/Notification/Notification';
+import HolidayList from './App/Screen/Holiday/HolidayList';
 
 export const GOOGLE_MAPS_APIKEY = "AIzaSyDPTHOYE5ZFGDIYxVsiJmOwMn9sHx0iYQA";
 
@@ -292,6 +293,7 @@ const App = () => {
           <Stack.Screen name="LMSDetails" component={LMSDetails} />
           <Stack.Screen name="HomeworkV2" component={HomeworkV2} />
           <Stack.Screen name="Notification" component={Notification} />
+          <Stack.Screen name="HolidayList" component={HolidayList} />
         </Stack.Navigator>
       </NavigationContainer>
       {/* </Theme.Provider> */}
