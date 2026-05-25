@@ -1,22 +1,24 @@
 import React, { useMemo, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    FlatList,
+    ActivityIndicator,
+    Image,
     RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import { Colors } from '../../Constants/Colors';
 import BackHeader from '../../Components/BackHeader';
+import TitleHeader from '../../Components/TitleHeader';
 import NavigationService from '../../Services/Navigation';
-import {
-    maxWidth,
-    moderateScale,
-} from '../../Constants/PixelRatio';
+import { Colors } from '../../Constants/Colors';
+import { Images } from '../../Constants/Images';
+import { appStyles } from '../../Constants/Fonts';
+import { moderateScale, screenHeight, maxWidth } from '../../Constants/PixelRatio';
 
 const NOTIFICATION_ICON = 'notifications-active';
 
@@ -72,6 +74,12 @@ const Notification = () => {
 
     const [activeFilter, setActiveFilter] = useState('All');
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const primaryColor = '#178D45';
+    const lightGreenColor = colors.lightGreen || '#E8F8EE';
+    const cardBorderColor = colors.lightBlck || colors.border || '#E3E8E5';
+    const cardBackground = colors.background || colors.card || Colors.white2;
 
     const unreadCount = NOTIFICATION_DATA.filter(item => item.unread).length;
 
@@ -91,122 +99,112 @@ const Notification = () => {
         }, 700);
     };
 
-    const renderFilter = ({ item }) => {
-        const isActive = activeFilter === item;
+    const renderFilter = item => {
+        const active = activeFilter === item;
 
         return (
             <TouchableOpacity
+                key={item}
                 activeOpacity={0.85}
-                onPress={() => setActiveFilter(item)}
+                onPress={() => {
+                    setActiveFilter(item);
+                }}
                 style={[
                     styles.filterChip,
-                    isActive && styles.activeFilterChip,
-                ]}
-            >
+                    {
+                        backgroundColor: active ? lightGreenColor : cardBackground,
+                        borderColor: active ? primaryColor : cardBorderColor,
+                    },
+                ]}>
                 <Text
                     style={[
                         styles.filterText,
-                        isActive && styles.activeFilterText,
-                    ]}
-                >
+                        {
+                            color: active ? primaryColor : colors.text,
+                            opacity: active ? 1 : 0.7,
+                        },
+                    ]}>
                     {item}
                 </Text>
             </TouchableOpacity>
         );
     };
 
-    const renderNotificationCard = ({ item }) => {
+    const renderNotificationCard = (item, index) => {
         return (
             <TouchableOpacity
+                key={item.id || index}
                 activeOpacity={0.88}
-                style={[
-                    styles.notificationCard,
-                    item.unread && styles.unreadCard,
-                ]}
-            >
-                <View style={styles.iconBox}>
-                    <Icon
-                        name={NOTIFICATION_ICON}
-                        size={moderateScale(17)}
-                        color={Colors.tangerine}
-                    />
-                </View>
-
-                <View style={styles.cardContent}>
-                    <View style={styles.cardTopRow}>
-                        <Text numberOfLines={1} style={styles.cardTitle}>
-                            {item.title}
-                        </Text>
-
-                        {item.unread ? <View style={styles.unreadDot} /> : null}
-                    </View>
-
-                    <Text numberOfLines={1} style={styles.cardMessage}>
-                        {item.message}
-                    </Text>
-
-                    <Text style={styles.cardTime}>{item.time}</Text>
-                </View>
-            </TouchableOpacity>
-        );
-    };
-
-    const ListHeader = () => {
-        return (
-            <View>
-                <View style={styles.summaryBox}>
-                    <View style={styles.summaryIconBox}>
+                style={{
+                    elevation: 3,
+                    width: '100%',
+                    borderRadius: 20,
+                    backgroundColor: Colors.white2,
+                    alignSelf: 'center',
+                    backgroundColor: cardBackground,
+                    borderColor: item.unread ? primaryColor : cardBorderColor,
+                    borderWidth: item.unread ? 0.8 : 0.5,
+                    overflow: 'hidden',
+                    marginBottom: moderateScale(9),
+                }}>
+                <View style={styles.notificationCardInner}>
+                    <View style={[styles.iconBox, { backgroundColor: lightGreenColor }]}>
                         <Icon
-                            name="notifications"
-                            size={moderateScale(20)}
-                            color={Colors.tangerine}
+                            name={NOTIFICATION_ICON}
+                            size={moderateScale(17)}
+                            color={primaryColor}
                         />
                     </View>
 
-                    <View style={styles.summaryTextBox}>
-                        <Text style={styles.summaryTitle}>Latest Updates</Text>
-                        <Text style={styles.summarySubTitle}>
-                            {unreadCount} unread from {NOTIFICATION_DATA.length} notifications
+                    <View style={styles.cardContent}>
+                        <View style={styles.cardTopRow}>
+                            <Text
+                                numberOfLines={1}
+                                style={[
+                                    styles.cardTitle,
+                                    {
+                                        color: colors.text,
+                                    },
+                                ]}>
+                                {item.title}
+                            </Text>
+
+                            {item.unread && (
+                                <View style={[styles.unreadDot, { backgroundColor: primaryColor }]} />
+                            )}
+                        </View>
+
+                        <Text
+                            numberOfLines={2}
+                            style={[
+                                styles.cardMessage,
+                                {
+                                    color: colors.text,
+                                },
+                            ]}>
+                            {item.message}
                         </Text>
+
+                        <View style={styles.timeRow}>
+                            <Icon
+                                name="access-time"
+                                size={moderateScale(13)}
+                                color={primaryColor}
+                            />
+
+                            <Text
+                                style={[
+                                    styles.cardTime,
+                                    {
+                                        color: colors.text,
+                                    },
+                                ]}>
+                                {item.time}
+                            </Text>
+                        </View>
                     </View>
                 </View>
-
-                <FlatList
-                    horizontal
-                    data={FILTERS}
-                    keyExtractor={item => item}
-                    renderItem={renderFilter}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filterList}
-                />
-
-                <View style={styles.sectionRow}>
-                    <Text style={styles.sectionTitle}>Notifications</Text>
-
-                    <Text style={styles.sectionCount}>
-                        {filteredNotifications.length} found
-                    </Text>
-                </View>
-            </View>
-        );
-    };
-
-    const EmptyComponent = () => {
-        return (
-            <View style={styles.emptyBox}>
-                <View style={styles.emptyIconBox}>
-                    <Icon
-                        name="notifications-none"
-                        size={moderateScale(32)}
-                        color={Colors.greyText}
-                    />
-                </View>
-
-                <Text style={styles.emptyTitle}>No notifications found</Text>
-                <Text style={styles.emptyText}>
-                    No updates are available in this category.
-                </Text>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -219,25 +217,121 @@ const Notification = () => {
                 }}
             />
 
-            <View style={[styles.main, { backgroundColor: colors.background }]}>
-                <FlatList
-                    data={filteredNotifications}
-                    keyExtractor={item => item.id.toString()}
-                    renderItem={renderNotificationCard}
-                    ListHeaderComponent={ListHeader}
-                    ListEmptyComponent={EmptyComponent}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            colors={[Colors.tangerine]}
-                            tintColor={Colors.tangerine}
-                        />
-                    }
-                    contentContainerStyle={styles.listContent}
-                />
-            </View>
+            <ScrollView
+                style={{
+                    backgroundColor: colors.background,
+                    width: '100%',
+                }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[primaryColor]}
+                        tintColor={primaryColor}
+                    />
+                }>
+                <View style={styles.main}>
+                    <TitleHeader
+                        title={'Your Notifications are here!'}
+                        image={Images.Board || Images.homeworkColor}
+                        imageStyle={{
+                            height: moderateScale(65),
+                            width: moderateScale(90),
+                        }}
+                    />
+
+                    <View style={styles.filterSection}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.filterList}>
+                            {FILTERS.map(item => renderFilter(item))}
+                        </ScrollView>
+                    </View>
+
+                    <View style={styles.sectionRow}>
+                        <View style={styles.sectionTitleBox}>
+                            <Icon
+                                name="notifications-none"
+                                size={moderateScale(17)}
+                                color={primaryColor}
+                            />
+
+                            <Text
+                                style={[
+                                    styles.sectionTitle,
+                                    {
+                                        color: colors.text,
+                                    },
+                                ]}>
+                                Notifications
+                            </Text>
+                        </View>
+
+                        <Text
+                            style={[
+                                styles.sectionCount,
+                                {
+                                    color: primaryColor,
+                                    backgroundColor: lightGreenColor,
+                                },
+                            ]}>
+                            {filteredNotifications.length} found
+                        </Text>
+                    </View>
+
+                    <View>
+                        {!loading && filteredNotifications.map((item, index) => renderNotificationCard(item, index))}
+
+                        {loading && (
+                            <ActivityIndicator
+                                size={28}
+                                color={primaryColor}
+                                style={{ marginTop: screenHeight / 3 }}
+                            />
+                        )}
+
+                        {filteredNotifications.length === 0 && !loading && (
+                            <View
+                                style={[
+                                    styles.emptyBox,
+                                    {
+                                        backgroundColor: cardBackground,
+                                        borderColor: cardBorderColor,
+                                    },
+                                ]}>
+                                <View style={[styles.emptyIconBox, { backgroundColor: lightGreenColor }]}>
+                                    <Icon
+                                        name="notifications-none"
+                                        size={moderateScale(32)}
+                                        color={primaryColor}
+                                    />
+                                </View>
+
+                                <Text
+                                    style={[
+                                        styles.emptyTitle,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    No notifications found
+                                </Text>
+
+                                <Text
+                                    style={[
+                                        styles.emptyText,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    No updates are available in this category.
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </ScrollView>
         </View>
     );
 };
@@ -249,232 +343,165 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.white2,
     },
-
     main: {
-        flex: 1,
         backgroundColor: Colors.white2,
-        width: '100%',
-        alignSelf: 'center',
-        maxWidth: maxWidth,
-    },
-
-    listContent: {
-        paddingBottom: moderateScale(30),
-    },
-
-    summaryBox: {
         width: '92%',
         alignSelf: 'center',
-        marginTop: moderateScale(12),
-        backgroundColor: Colors.white,
+        maxWidth: maxWidth,
+        minHeight: screenHeight - 80,
+    },
+    summaryBox: {
         borderRadius: moderateScale(15),
         paddingHorizontal: moderateScale(12),
         paddingVertical: moderateScale(10),
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: Colors.lightGrey,
-        shadowColor: Colors.black,
-        shadowOpacity: 0.04,
-        shadowOffset: { width: 0, height: 3 },
-        shadowRadius: 6,
-        elevation: 2,
+        borderWidth: 0.5,
+        marginBottom: moderateScale(8),
     },
-
     summaryIconBox: {
-        width: moderateScale(38),
-        height: moderateScale(38),
-        borderRadius: moderateScale(13),
-        backgroundColor: Colors.inputBackground,
+        width: moderateScale(42),
+        height: moderateScale(42),
+        borderRadius: moderateScale(14),
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: moderateScale(10),
     },
-
     summaryTextBox: {
         flex: 1,
     },
-
     summaryTitle: {
         fontSize: moderateScale(14),
-        color: Colors.black,
-        fontWeight: '900',
+        fontWeight: '500',
     },
-
     summarySubTitle: {
-        marginTop: moderateScale(2),
+        marginTop: moderateScale(3),
         fontSize: moderateScale(10.8),
-        color: Colors.greyText,
-        fontWeight: '700',
+        fontWeight: '400',
+        opacity: 0.65,
     },
-
+    filterSection: {
+        marginTop: moderateScale(8),
+    },
     filterList: {
-        paddingHorizontal: moderateScale(14),
-        paddingTop: moderateScale(12),
-        paddingBottom: moderateScale(3),
+        paddingVertical: moderateScale(3),
+        gap: moderateScale(8),
     },
-
     filterChip: {
+        height: moderateScale(32),
         paddingHorizontal: moderateScale(14),
-        paddingVertical: moderateScale(6),
-        borderRadius: moderateScale(999),
-        backgroundColor: Colors.white,
-        borderWidth: 1,
-        borderColor: Colors.lightGrey,
-        marginRight: moderateScale(8),
+        borderRadius: moderateScale(16),
+        borderWidth: 0.5,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-
-    activeFilterChip: {
-        backgroundColor: Colors.tangerine,
-        borderColor: Colors.tangerine,
-    },
-
     filterText: {
-        color: Colors.greyText,
-        fontSize: moderateScale(10.8),
-        fontWeight: '900',
+        fontSize: moderateScale(11),
+        fontWeight: '500',
     },
-
-    activeFilterText: {
-        color: Colors.white,
-    },
-
     sectionRow: {
-        width: '92%',
-        alignSelf: 'center',
-        marginTop: moderateScale(10),
-        marginBottom: moderateScale(8),
+        marginTop: moderateScale(14),
+        marginBottom: moderateScale(7),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-
-    sectionTitle: {
-        color: Colors.black,
-        fontSize: moderateScale(15),
-        fontWeight: '900',
-    },
-
-    sectionCount: {
-        color: Colors.greyText,
-        fontSize: moderateScale(10),
-        fontWeight: '800',
-        backgroundColor: Colors.white,
-        paddingHorizontal: moderateScale(8),
-        paddingVertical: moderateScale(3.5),
-        borderRadius: moderateScale(999),
-        borderWidth: 1,
-        borderColor: Colors.lightGrey,
-    },
-
-    notificationCard: {
-        width: '92%',
-        alignSelf: 'center',
-        backgroundColor: Colors.white,
-        borderRadius: moderateScale(14),
-        paddingHorizontal: moderateScale(10),
-        paddingVertical: moderateScale(7),
-        marginBottom: moderateScale(8),
+    sectionTitleBox: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: Colors.lightGrey,
-        shadowColor: Colors.black,
-        shadowOpacity: 0.035,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 5,
-        elevation: 1,
+        paddingRight: moderateScale(8),
     },
-
-    unreadCard: {
-        borderColor: Colors.tangerine4,
-        backgroundColor: Colors.white2,
+    sectionTitle: {
+        fontSize: moderateScale(14),
+        fontWeight: '500',
+        marginLeft: moderateScale(6),
     },
-
+    sectionCount: {
+        fontSize: moderateScale(10),
+        fontWeight: '500',
+        paddingHorizontal: moderateScale(9),
+        paddingVertical: moderateScale(4),
+        borderRadius: moderateScale(16),
+        overflow: 'hidden',
+    },
+    notificationCardInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: moderateScale(10),
+        paddingVertical: moderateScale(9),
+    },
     iconBox: {
-        width: moderateScale(34),
-        height: moderateScale(34),
-        borderRadius: moderateScale(12),
-        backgroundColor: Colors.inputBackground,
+        width: moderateScale(38),
+        height: moderateScale(38),
+        borderRadius: moderateScale(13),
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: moderateScale(9),
+        marginRight: moderateScale(10),
     },
-
     cardContent: {
         flex: 1,
     },
-
     cardTopRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-
     cardTitle: {
         flex: 1,
-        color: Colors.black,
-        fontSize: moderateScale(12.4),
-        fontWeight: '900',
+        fontSize: moderateScale(13),
+        fontWeight: '500',
         paddingRight: moderateScale(7),
     },
-
     unreadDot: {
         width: moderateScale(7),
         height: moderateScale(7),
         borderRadius: moderateScale(3.5),
-        backgroundColor: Colors.tangerine,
     },
-
     cardMessage: {
-        marginTop: moderateScale(2),
-        color: Colors.darkGrey,
-        fontSize: moderateScale(10.7),
-        lineHeight: moderateScale(14),
-        fontWeight: '600',
+        marginTop: moderateScale(3),
+        fontSize: moderateScale(10.8),
+        lineHeight: moderateScale(15),
+        fontWeight: '400',
+        opacity: 0.68,
     },
-
-    cardTime: {
-        marginTop: moderateScale(4),
-        color: Colors.greyText,
-        fontSize: moderateScale(9.7),
-        fontWeight: '700',
-    },
-
-    emptyBox: {
-        width: '92%',
-        alignSelf: 'center',
-        backgroundColor: Colors.white,
-        borderRadius: moderateScale(18),
-        paddingVertical: moderateScale(30),
-        paddingHorizontal: moderateScale(18),
+    timeRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: Colors.lightGrey,
-        marginTop: moderateScale(14),
+        marginTop: moderateScale(5),
     },
-
+    cardTime: {
+        marginLeft: moderateScale(5),
+        fontSize: moderateScale(10),
+        fontWeight: '400',
+        opacity: 0.62,
+    },
+    emptyBox: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: moderateScale(30),
+        paddingHorizontal: moderateScale(22),
+        borderRadius: moderateScale(18),
+        borderWidth: 0.5,
+        marginTop: moderateScale(10),
+    },
     emptyIconBox: {
         width: moderateScale(62),
         height: moderateScale(62),
         borderRadius: moderateScale(31),
-        backgroundColor: Colors.lightGrey2,
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     emptyTitle: {
         marginTop: moderateScale(12),
-        color: Colors.black,
-        fontSize: moderateScale(14.5),
-        fontWeight: '900',
+        fontSize: moderateScale(15),
+        fontWeight: '500',
     },
-
     emptyText: {
         marginTop: moderateScale(5),
-        color: Colors.greyText,
         fontSize: moderateScale(11),
         lineHeight: moderateScale(16),
         textAlign: 'center',
-        fontWeight: '600',
+        fontWeight: '400',
+        opacity: 0.6,
     },
 });

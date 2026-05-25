@@ -1,51 +1,33 @@
 import React, { useMemo, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    FlatList,
+    ActivityIndicator,
+    Image,
     RefreshControl,
     ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import { Colors } from '../../Constants/Colors';
 import BackHeader from '../../Components/BackHeader';
+import TitleHeader from '../../Components/TitleHeader';
 import NavigationService from '../../Services/Navigation';
-import {
-    moderateScale,
-} from '../../Constants/PixelRatio';
+import { Colors } from '../../Constants/Colors';
+import { Images } from '../../Constants/Images';
+import { appStyles } from '../../Constants/Fonts';
+import { moderateScale, screenHeight, maxWidth } from '../../Constants/PixelRatio';
 
 const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
 const shortMonths = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -54,10 +36,6 @@ const currentDate = new Date();
 const currentYear = currentDate.getFullYear();
 const currentMonth = currentDate.getMonth();
 
-/**
- * Replace this static list with your API response when backend is ready.
- * Keep date format as YYYY-MM-DD.
- */
 const holidayList = [
     {
         id: '1',
@@ -165,6 +143,15 @@ const HolidayList = () => {
     const [selectedMonth, setSelectedMonth] = useState(currentMonth);
     const [showAllYear, setShowAllYear] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const primaryColor = '#178D45';
+    const lightGreenColor = colors.lightGreen || '#E8F8EE';
+    const cardBorderColor = colors.lightBlck || colors.border || '#E3E8E5';
+    const cardBackground = colors.background || colors.card || Colors.white2;
+    const currentChipBg = '#FFF8E6';
+    const currentChipBorder = '#F1C36D';
+    const currentChipText = '#B7791F';
 
     const sortedHolidays = useMemo(() => {
         return [...holidayList].sort((a, b) => {
@@ -202,43 +189,22 @@ const HolidayList = () => {
 
     const formatDate = dateString => {
         const date = new Date(dateString);
-        const day = date.getDate();
-        const month = shortMonths[date.getMonth()];
-        const weekDay = weekDays[date.getDay()];
 
         return {
-            day,
-            month,
-            weekDay,
+            day: date.getDate(),
+            month: shortMonths[date.getMonth()],
+            weekDay: weekDays[date.getDay()],
             monthFull: months[date.getMonth()],
         };
     };
 
-    const getTypeColor = type => {
-        if (type === 'National Holiday') {
-            return '#FF7043';
-        }
-
-        if (type === 'Festival Holiday') {
-            return '#7E57C2';
-        }
-
-        if (type === 'Vacation') {
-            return '#26A69A';
-        }
-
-        if (type === 'School Event') {
-            return '#42A5F5';
-        }
-
-        return '#66BB6A';
-    };
-
-    const renderMonthChip = ({ item, index }) => {
+    const renderMonthChip = (item, index) => {
         const active = !showAllYear && selectedMonth === index;
+        const isCurrent = index === currentMonth;
 
         return (
             <TouchableOpacity
+                key={item}
                 activeOpacity={0.8}
                 onPress={() => {
                     setSelectedMonth(index);
@@ -247,139 +213,149 @@ const HolidayList = () => {
                 style={[
                     styles.monthChip,
                     {
-                        backgroundColor: active ? colors.green : colors.card || '#fff',
-                        borderColor: active ? colors.green : '#E3E8E5',
+                        backgroundColor: active ? lightGreenColor : isCurrent ? currentChipBg : cardBackground,
+                        borderColor: active ? primaryColor : isCurrent ? currentChipBorder : cardBorderColor,
                     },
-                ]}
-            >
+                ]}>
                 <Text
                     style={[
                         styles.monthChipText,
                         {
-                            color: active ? '#fff' : colors.text,
+                            color: active ? primaryColor : isCurrent ? currentChipText : colors.text,
+                            opacity: active || isCurrent ? 1 : 0.72,
                         },
-                    ]}
-                >
+                    ]}>
                     {item.slice(0, 3)}
                 </Text>
+
+                {isCurrent && (
+                    <View
+                        style={[
+                            styles.currentDot,
+                            {
+                                backgroundColor: active ? primaryColor : currentChipText,
+                            },
+                        ]}
+                    />
+                )}
             </TouchableOpacity>
         );
     };
 
-    const renderHolidayItem = ({ item }) => {
+    const renderHolidayItem = (item, index) => {
         const formatted = formatDate(item.date);
-        const typeColor = getTypeColor(item.type);
 
         return (
             <View
-                style={[
-                    styles.holidayCard,
-                    {
-                        backgroundColor: colors.card || '#fff',
-                        borderColor: colors.border || '#EEF2EF',
-                    },
-                ]}
-            >
-                <View style={styles.dateBox}>
-                    <Text style={styles.dateDay}>{formatted.day}</Text>
-                    <Text style={styles.dateMonth}>{formatted.month}</Text>
-                    <Text style={styles.dateWeek}>{formatted.weekDay}</Text>
+                key={item.id || index}
+                style={{
+                    ...appStyles.card,
+                    backgroundColor: cardBackground,
+                    borderColor: cardBorderColor,
+                    borderWidth: 0.5,
+                    overflow: 'hidden',
+                    marginBottom: moderateScale(10),
+                }}>
+                <View
+                    style={{
+                        ...appStyles.titleRow,
+                        backgroundColor: lightGreenColor,
+                        paddingVertical: moderateScale(7),
+                        minHeight: moderateScale(36),
+                    }}>
+                    <Text
+                        numberOfLines={1}
+                        style={{
+                            ...styles.title,
+                            color: colors.text,
+                        }}>
+                        {item.title}
+                    </Text>
                 </View>
 
-                <View style={styles.holidayInfo}>
-                    <View style={styles.cardTopRow}>
-                        <Text
-                            numberOfLines={1}
-                            style={[
-                                styles.holidayTitle,
-                                {
-                                    color: colors.text,
-                                },
-                            ]}
-                        >
-                            {item.title}
-                        </Text>
-
+                <View style={styles.cardBody}>
+                    <View style={styles.dateRow}>
                         <View
                             style={[
-                                styles.typeBadge,
+                                styles.dateBox,
                                 {
-                                    backgroundColor: `${typeColor}20`,
+                                    backgroundColor: lightGreenColor,
                                 },
-                            ]}
-                        >
+                            ]}>
                             <Text
                                 style={[
-                                    styles.typeText,
+                                    styles.dateDay,
                                     {
-                                        color: typeColor,
+                                        color: primaryColor,
                                     },
-                                ]}
-                            >
-                                {item.type}
+                                ]}>
+                                {formatted.day}
                             </Text>
+                            <Text
+                                style={[
+                                    styles.dateMonth,
+                                    {
+                                        color: primaryColor,
+                                    },
+                                ]}>
+                                {formatted.month}
+                            </Text>
+                        </View>
+
+                        <View style={styles.dateInfo}>
+                            <View style={styles.infoRow}>
+                                <Image
+                                    source={Images.calendar}
+                                    style={[
+                                        styles.rowIcon,
+                                        {
+                                            tintColor: primaryColor,
+                                        },
+                                    ]}
+                                />
+
+                                <Text
+                                    style={[
+                                        styles.description,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    {formatted.weekDay}, {formatted.monthFull} {currentYear}
+                                </Text>
+                            </View>
+
+                            <View
+                                style={[
+                                    styles.typeBadge,
+                                    {
+                                        backgroundColor: lightGreenColor,
+                                    },
+                                ]}>
+                                <Text
+                                    style={[
+                                        styles.typeText,
+                                        {
+                                            color: primaryColor,
+                                        },
+                                    ]}>
+                                    {item.type}
+                                </Text>
+                            </View>
                         </View>
                     </View>
 
                     <Text
+                        numberOfLines={2}
                         style={[
-                            styles.holidayNote,
+                            styles.noteText,
                             {
                                 color: colors.text,
                             },
-                        ]}
-                    >
+                        ]}>
                         {item.note}
                     </Text>
-
-                    {showAllYear && (
-                        <View style={styles.monthLine}>
-                            <Icon name="calendar-month" size={15} color={colors.green} />
-                            <Text
-                                style={[
-                                    styles.monthLineText,
-                                    {
-                                        color: colors.text,
-                                    },
-                                ]}
-                            >
-                                {formatted.monthFull} {currentYear}
-                            </Text>
-                        </View>
-                    )}
                 </View>
-            </View>
-        );
-    };
-
-    const ListEmptyComponent = () => {
-        return (
-            <View style={styles.emptyBox}>
-                <View style={styles.emptyIconBox}>
-                    <Icon name="event-busy" size={38} color={colors.green} />
-                </View>
-
-                <Text
-                    style={[
-                        styles.emptyTitle,
-                        {
-                            color: colors.text,
-                        },
-                    ]}
-                >
-                    No holidays found
-                </Text>
-
-                <Text
-                    style={[
-                        styles.emptySubTitle,
-                        {
-                            color: colors.text,
-                        },
-                    ]}
-                >
-                    There is no holiday added for {months[selectedMonth]} {currentYear}.
-                </Text>
             </View>
         );
     };
@@ -393,118 +369,211 @@ const HolidayList = () => {
                 }}
             />
 
-            <View style={styles.headerCardWrapper}>
-                <View style={styles.headerCard}>
-                    <View>
-                        <Text style={styles.headerSmallText}>Academic Year</Text>
-                        <Text style={styles.headerTitle}>{currentYear} Holiday List</Text>
-                        <Text style={styles.headerSubTitle}>
-                            View monthly holidays or complete year list
-                        </Text>
-                    </View>
-
-                    <View style={styles.headerIconBox}>
-                        <Icon name="event-available" size={34} color="#fff" />
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.summaryWrapper}>
-                <View style={[styles.summaryCard, { backgroundColor: colors.card || '#fff' }]}>
-                    <Icon name="today" size={22} color={colors.green} />
-                    <View style={styles.summaryTextBox}>
-                        <Text style={[styles.summaryValue, { color: colors.text }]}>
-                            {currentMonthHolidayCount}
-                        </Text>
-                        <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                            This Month
-                        </Text>
-                    </View>
-                </View>
-
-                <View style={[styles.summaryCard, { backgroundColor: colors.card || '#fff' }]}>
-                    <Icon name="date-range" size={22} color={colors.green} />
-                    <View style={styles.summaryTextBox}>
-                        <Text style={[styles.summaryValue, { color: colors.text }]}>
-                            {totalHolidayCount}
-                        </Text>
-                        <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                            This Year
-                        </Text>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.filterSection}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.monthScrollContent}
-                >
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => setShowAllYear(true)}
-                        style={[
-                            styles.allYearButton,
-                            {
-                                backgroundColor: showAllYear ? colors.green : colors.card || '#fff',
-                                borderColor: showAllYear ? colors.green : '#E3E8E5',
-                            },
-                        ]}
-                    >
-                        <Icon
-                            name="calendar-today"
-                            size={16}
-                            color={showAllYear ? '#fff' : colors.green}
-                        />
-                        <Text
-                            style={[
-                                styles.allYearText,
-                                {
-                                    color: showAllYear ? '#fff' : colors.text,
-                                },
-                            ]}
-                        >
-                            All Year
-                        </Text>
-                    </TouchableOpacity>
-
-                    {months.map((item, index) => (
-                        <View key={item}>
-                            {renderMonthChip({ item, index })}
-                        </View>
-                    ))}
-                </ScrollView>
-            </View>
-
-            <View style={styles.listHeader}>
-                <Text style={[styles.listTitle, { color: colors.text }]}>
-                    {showAllYear
-                        ? `All Holidays - ${currentYear}`
-                        : `${months[selectedMonth]} Holidays`}
-                </Text>
-
-                <Text style={styles.listCount}>
-                    {filteredHolidays.length} Holiday{filteredHolidays.length > 1 ? 's' : ''}
-                </Text>
-            </View>
-
-            <FlatList
-                data={filteredHolidays}
-                keyExtractor={item => item.id}
-                renderItem={renderHolidayItem}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={ListEmptyComponent}
+            <ScrollView
+                style={{
+                    backgroundColor: colors.background,
+                    width: '100%',
+                }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        colors={[colors.green]}
-                        tintColor={colors.green}
+                        colors={[primaryColor]}
+                        tintColor={primaryColor}
                     />
-                }
-            />
+                }>
+                <View style={styles.main}>
+                    <TitleHeader
+                        title={'Your Holiday List is here!'}
+                        image={Images.classRoutine}
+                        imageStyle={{
+                            height: moderateScale(65),
+                            width: moderateScale(90),
+                        }}
+                    />
+
+                    <View style={styles.summaryWrapper}>
+                        <View
+                            style={[
+                                styles.summaryCard,
+                                {
+                                    backgroundColor: cardBackground,
+                                    borderColor: cardBorderColor,
+                                },
+                            ]}>
+                            <View
+                                style={[
+                                    styles.summaryIconBox,
+                                    {
+                                        backgroundColor: lightGreenColor,
+                                    },
+                                ]}>
+                                <Icon name="today" size={18} color={primaryColor} />
+                            </View>
+
+                            <View style={styles.summaryTextBox}>
+                                <Text
+                                    style={[
+                                        styles.summaryValue,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    {currentMonthHolidayCount}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.summaryLabel,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    This Month
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View
+                            style={[
+                                styles.summaryCard,
+                                {
+                                    backgroundColor: cardBackground,
+                                    borderColor: cardBorderColor,
+                                },
+                            ]}>
+                            <View
+                                style={[
+                                    styles.summaryIconBox,
+                                    {
+                                        backgroundColor: lightGreenColor,
+                                    },
+                                ]}>
+                                <Icon name="date-range" size={18} color={primaryColor} />
+                            </View>
+
+                            <View style={styles.summaryTextBox}>
+                                <Text
+                                    style={[
+                                        styles.summaryValue,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    {totalHolidayCount}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.summaryLabel,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    This Year
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <View style={styles.filterSection}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.monthScrollContent}>
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                onPress={() => {
+                                    setShowAllYear(true);
+                                }}
+                                style={[
+                                    styles.allYearButton,
+                                    {
+                                        backgroundColor: showAllYear ? lightGreenColor : cardBackground,
+                                        borderColor: showAllYear ? primaryColor : cardBorderColor,
+                                    },
+                                ]}>
+                                <Icon name="calendar-today" size={14} color={primaryColor} />
+
+                                <Text
+                                    style={[
+                                        styles.allYearText,
+                                        {
+                                            color: showAllYear ? primaryColor : colors.text,
+                                            opacity: showAllYear ? 1 : 0.72,
+                                        },
+                                    ]}>
+                                    All Year
+                                </Text>
+                            </TouchableOpacity>
+
+                            {months.map((item, index) => renderMonthChip(item, index))}
+                        </ScrollView>
+                    </View>
+
+                    <View style={styles.listHeader}>
+                        <Text
+                            style={[
+                                styles.listTitle,
+                                {
+                                    color: colors.text,
+                                },
+                            ]}>
+                            {showAllYear
+                                ? `All Holidays - ${currentYear}`
+                                : `${months[selectedMonth]} Holidays`}
+                        </Text>
+
+                        <Text
+                            style={[
+                                styles.listCount,
+                                {
+                                    color: primaryColor,
+                                    backgroundColor: lightGreenColor,
+                                },
+                            ]}>
+                            {filteredHolidays.length} Holiday{filteredHolidays.length > 1 ? 's' : ''}
+                        </Text>
+                    </View>
+
+                    <View>
+                        {!loading && filteredHolidays.map((item, index) => renderHolidayItem(item, index))}
+
+                        {loading && (
+                            <ActivityIndicator
+                                size={28}
+                                color={primaryColor}
+                                style={{ marginTop: screenHeight / 3 }}
+                            />
+                        )}
+
+                        {filteredHolidays.length === 0 && !loading && (
+                            <View style={styles.emptyBox}>
+                                <Image
+                                    source={Images.NoDataFound}
+                                    style={styles.emptyImage}
+                                />
+                                <Text
+                                    style={[
+                                        styles.emptyTitle,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    No holidays found
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.emptySubTitle,
+                                        {
+                                            color: colors.text,
+                                        },
+                                    ]}>
+                                    There is no holiday added for {months[selectedMonth]} {currentYear}.
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </ScrollView>
         </View>
     );
 };
@@ -516,288 +585,197 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.white2,
     },
-
-    headerCardWrapper: {
-        paddingHorizontal: moderateScale(16),
-        paddingTop: moderateScale(14),
+    main: {
+        backgroundColor: Colors.white2,
+        width: '92%',
+        alignSelf: 'center',
+        maxWidth: maxWidth,
+        minHeight: screenHeight - 80,
     },
-
-    headerCard: {
-        minHeight: moderateScale(120),
-        borderRadius: moderateScale(22),
-        padding: moderateScale(18),
-        backgroundColor: '#178D45',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        overflow: 'hidden',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-    },
-
-    headerSmallText: {
-        color: '#E8FFF0',
-        fontSize: moderateScale(12),
-        fontWeight: '600',
-        marginBottom: moderateScale(5),
-    },
-
-    headerTitle: {
-        color: '#fff',
-        fontSize: moderateScale(20),
-        fontWeight: '800',
-    },
-
-    headerSubTitle: {
-        color: '#E8FFF0',
-        fontSize: moderateScale(12),
-        marginTop: moderateScale(6),
-        maxWidth: moderateScale(210),
-        lineHeight: moderateScale(18),
-    },
-
-    headerIconBox: {
-        width: moderateScale(62),
-        height: moderateScale(62),
-        borderRadius: moderateScale(20),
-        backgroundColor: 'rgba(255,255,255,0.18)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
     summaryWrapper: {
         flexDirection: 'row',
-        paddingHorizontal: moderateScale(16),
-        marginTop: moderateScale(14),
-        gap: moderateScale(12),
+        marginTop: moderateScale(6),
+        marginBottom: moderateScale(6),
+        gap: moderateScale(8),
     },
-
     summaryCard: {
         flex: 1,
-        borderRadius: moderateScale(16),
-        padding: moderateScale(14),
-        flexDirection: 'row',
-        alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-    },
-
-    summaryTextBox: {
-        marginLeft: moderateScale(10),
-    },
-
-    summaryValue: {
-        fontSize: moderateScale(18),
-        fontWeight: '800',
-    },
-
-    summaryLabel: {
-        fontSize: moderateScale(11),
-        opacity: 0.6,
-        marginTop: moderateScale(2),
-    },
-
-    filterSection: {
-        marginTop: moderateScale(16),
-    },
-
-    monthScrollContent: {
-        paddingHorizontal: moderateScale(16),
-        gap: moderateScale(8),
-    },
-
-    allYearButton: {
-        height: moderateScale(38),
-        paddingHorizontal: moderateScale(14),
-        borderRadius: moderateScale(20),
-        borderWidth: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: moderateScale(6),
-    },
-
-    allYearText: {
-        fontSize: moderateScale(12),
-        fontWeight: '700',
-    },
-
-    monthChip: {
-        height: moderateScale(38),
-        minWidth: moderateScale(58),
-        borderRadius: moderateScale(20),
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: moderateScale(12),
-    },
-
-    monthChipText: {
-        fontSize: moderateScale(12),
-        fontWeight: '700',
-    },
-
-    listHeader: {
-        marginTop: moderateScale(18),
-        paddingHorizontal: moderateScale(16),
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-
-    listTitle: {
-        fontSize: moderateScale(16),
-        fontWeight: '800',
-    },
-
-    listCount: {
-        fontSize: moderateScale(11),
-        fontWeight: '700',
-        color: '#178D45',
-        backgroundColor: '#E8F8EE',
+        borderRadius: moderateScale(12),
         paddingHorizontal: moderateScale(10),
-        paddingVertical: moderateScale(5),
-        borderRadius: moderateScale(20),
-    },
-
-    listContent: {
-        paddingHorizontal: moderateScale(16),
-        paddingTop: moderateScale(12),
-        paddingBottom: moderateScale(30),
-    },
-
-    holidayCard: {
-        borderRadius: moderateScale(18),
-        borderWidth: 1,
-        padding: moderateScale(12),
-        marginBottom: moderateScale(12),
+        paddingVertical: moderateScale(9),
         flexDirection: 'row',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        alignItems: 'center',
+        borderWidth: 0.5,
     },
-
-    dateBox: {
-        width: moderateScale(62),
+    summaryIconBox: {
+        width: moderateScale(32),
+        height: moderateScale(32),
         borderRadius: moderateScale(16),
-        backgroundColor: '#F1FFF5',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: moderateScale(8),
-        marginRight: moderateScale(12),
     },
-
-    dateDay: {
-        fontSize: moderateScale(21),
-        fontWeight: '900',
-        color: '#178D45',
+    summaryTextBox: {
+        marginLeft: moderateScale(8),
     },
-
-    dateMonth: {
-        fontSize: moderateScale(12),
-        fontWeight: '800',
-        color: '#178D45',
+    summaryValue: {
+        fontSize: moderateScale(14),
+        fontWeight: '500',
+    },
+    summaryLabel: {
+        fontSize: moderateScale(10),
+        fontWeight: '400',
+        opacity: 0.7,
         marginTop: moderateScale(1),
     },
-
-    dateWeek: {
-        fontSize: moderateScale(10),
-        fontWeight: '600',
-        color: '#6B7C70',
-        marginTop: moderateScale(2),
+    filterSection: {
+        marginTop: moderateScale(8),
     },
-
-    holidayInfo: {
-        flex: 1,
+    monthScrollContent: {
+        paddingVertical: moderateScale(3),
+        gap: moderateScale(7),
     },
-
-    cardTopRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: moderateScale(8),
-    },
-
-    holidayTitle: {
-        flex: 1,
-        fontSize: moderateScale(14),
-        fontWeight: '800',
-    },
-
-    typeBadge: {
-        borderRadius: moderateScale(20),
-        paddingHorizontal: moderateScale(8),
-        paddingVertical: moderateScale(4),
-    },
-
-    typeText: {
-        fontSize: moderateScale(9),
-        fontWeight: '800',
-    },
-
-    holidayNote: {
-        fontSize: moderateScale(12),
-        opacity: 0.65,
-        lineHeight: moderateScale(18),
-        marginTop: moderateScale(7),
-    },
-
-    monthLine: {
+    allYearButton: {
+        height: moderateScale(32),
+        paddingHorizontal: moderateScale(11),
+        borderRadius: moderateScale(16),
+        borderWidth: 0.5,
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: moderateScale(8),
         gap: moderateScale(5),
     },
-
-    monthLineText: {
+    allYearText: {
         fontSize: moderateScale(11),
-        fontWeight: '600',
-        opacity: 0.65,
+        fontWeight: '500',
     },
-
+    monthChip: {
+        height: moderateScale(32),
+        minWidth: moderateScale(50),
+        borderRadius: moderateScale(16),
+        borderWidth: 0.5,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: moderateScale(10),
+    },
+    monthChipText: {
+        fontSize: moderateScale(11),
+        fontWeight: '500',
+    },
+    currentDot: {
+        width: moderateScale(4),
+        height: moderateScale(4),
+        borderRadius: moderateScale(2),
+        marginTop: moderateScale(2),
+    },
+    listHeader: {
+        marginTop: moderateScale(14),
+        marginBottom: moderateScale(5),
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    listTitle: {
+        fontSize: moderateScale(14),
+        fontWeight: '500',
+    },
+    listCount: {
+        fontSize: moderateScale(10),
+        fontWeight: '500',
+        paddingHorizontal: moderateScale(9),
+        paddingVertical: moderateScale(4),
+        borderRadius: moderateScale(16),
+        overflow: 'hidden',
+    },
+    title: {
+        flex: 1,
+        fontSize: moderateScale(14),
+        fontWeight: '500',
+        color: Colors.black,
+    },
+    cardBody: {
+        paddingHorizontal: moderateScale(13),
+        paddingBottom: moderateScale(11),
+        paddingTop: moderateScale(9),
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    dateBox: {
+        width: moderateScale(48),
+        height: moderateScale(48),
+        borderRadius: moderateScale(12),
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: moderateScale(10),
+    },
+    dateDay: {
+        fontSize: moderateScale(16),
+        fontWeight: '500',
+    },
+    dateMonth: {
+        fontSize: moderateScale(10),
+        fontWeight: '500',
+        marginTop: moderateScale(1),
+    },
+    dateInfo: {
+        flex: 1,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    rowIcon: {
+        height: moderateScale(16),
+        width: moderateScale(16),
+        resizeMode: 'contain',
+    },
+    description: {
+        fontSize: moderateScale(11),
+        fontWeight: '500',
+        marginLeft: moderateScale(8),
+        opacity: 0.78,
+    },
+    typeBadge: {
+        alignSelf: 'flex-start',
+        marginTop: moderateScale(6),
+        paddingHorizontal: moderateScale(8),
+        paddingVertical: moderateScale(3),
+        borderRadius: moderateScale(14),
+    },
+    typeText: {
+        fontSize: moderateScale(9),
+        fontWeight: '500',
+    },
+    noteText: {
+        fontSize: moderateScale(11),
+        fontWeight: '400',
+        lineHeight: moderateScale(16),
+        opacity: 0.72,
+        marginTop: moderateScale(8),
+    },
     emptyBox: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: moderateScale(70),
+        paddingTop: screenHeight / 5,
         paddingHorizontal: moderateScale(30),
     },
-
-    emptyIconBox: {
-        width: moderateScale(76),
-        height: moderateScale(76),
-        borderRadius: moderateScale(38),
-        backgroundColor: '#E8F8EE',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: moderateScale(16),
+    emptyImage: {
+        height: moderateScale(60),
+        width: moderateScale(60),
+        opacity: 0.5,
+        resizeMode: 'contain',
     },
-
     emptyTitle: {
-        fontSize: moderateScale(17),
-        fontWeight: '800',
+        fontSize: moderateScale(15),
+        fontWeight: '500',
+        marginTop: moderateScale(10),
     },
-
     emptySubTitle: {
         fontSize: moderateScale(12),
+        fontWeight: '400',
         opacity: 0.6,
         textAlign: 'center',
-        marginTop: moderateScale(8),
+        marginTop: moderateScale(7),
         lineHeight: moderateScale(18),
     },
 });
