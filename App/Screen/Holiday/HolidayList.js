@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -10,6 +10,8 @@ import {
     View,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import BackHeader from '../../Components/BackHeader';
@@ -20,212 +22,423 @@ import { Images } from '../../Constants/Images';
 import { appStyles } from '../../Constants/Fonts';
 import { moderateScale, screenHeight, maxWidth } from '../../Constants/PixelRatio';
 
-const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+const API_KEY = '123123';
+
+const defaultMonths = [
+    { month_number: 1, title: 'Jan' },
+    { month_number: 2, title: 'Feb' },
+    { month_number: 3, title: 'Mar' },
+    { month_number: 4, title: 'Apr' },
+    { month_number: 5, title: 'May' },
+    { month_number: 6, title: 'Jun' },
+    { month_number: 7, title: 'Jul' },
+    { month_number: 8, title: 'Aug' },
+    { month_number: 9, title: 'Sep' },
+    { month_number: 10, title: 'Oct' },
+    { month_number: 11, title: 'Nov' },
+    { month_number: 12, title: 'Dec' },
 ];
 
-const shortMonths = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+const fullMonths = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
 ];
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const currentDate = new Date();
-const currentYear = currentDate.getFullYear();
-const currentMonth = currentDate.getMonth();
+const today = new Date();
+const currentMonthNumber = today.getMonth() + 1;
 
-const holidayList = [
-    {
-        id: '1',
-        title: 'New Year Holiday',
-        date: `${currentYear}-01-01`,
-        type: 'Public Holiday',
-        note: 'School will remain closed for New Year celebration.',
-    },
-    {
-        id: '2',
-        title: 'Republic Day',
-        date: `${currentYear}-01-26`,
-        type: 'National Holiday',
-        note: 'Holiday on the occasion of Republic Day.',
-    },
-    {
-        id: '3',
-        title: 'Saraswati Puja',
-        date: `${currentYear}-02-03`,
-        type: 'Festival Holiday',
-        note: 'Holiday for Saraswati Puja celebration.',
-    },
-    {
-        id: '4',
-        title: 'Holi',
-        date: `${currentYear}-03-14`,
-        type: 'Festival Holiday',
-        note: 'Holiday on the occasion of Holi.',
-    },
-    {
-        id: '5',
-        title: 'Good Friday',
-        date: `${currentYear}-04-18`,
-        type: 'Public Holiday',
-        note: 'School will remain closed.',
-    },
-    {
-        id: '6',
-        title: 'Summer Vacation Starts',
-        date: `${currentYear}-05-15`,
-        type: 'Vacation',
-        note: 'Summer vacation begins from this date.',
-    },
-    {
-        id: '7',
-        title: 'Ratha Yatra',
-        date: `${currentYear}-06-27`,
-        type: 'Festival Holiday',
-        note: 'Holiday on the occasion of Ratha Yatra.',
-    },
-    {
-        id: '8',
-        title: 'Independence Day',
-        date: `${currentYear}-08-15`,
-        type: 'National Holiday',
-        note: 'Holiday on the occasion of Independence Day.',
-    },
-    {
-        id: '9',
-        title: 'Janmashtami',
-        date: `${currentYear}-08-16`,
-        type: 'Festival Holiday',
-        note: 'Holiday on the occasion of Janmashtami.',
-    },
-    {
-        id: '10',
-        title: 'Teacher’s Day Celebration',
-        date: `${currentYear}-09-05`,
-        type: 'School Event',
-        note: 'Special celebration in school.',
-    },
-    {
-        id: '11',
-        title: 'Gandhi Jayanti',
-        date: `${currentYear}-10-02`,
-        type: 'National Holiday',
-        note: 'Holiday on the occasion of Gandhi Jayanti.',
-    },
-    {
-        id: '12',
-        title: 'Dussehra Holiday',
-        date: `${currentYear}-10-20`,
-        type: 'Festival Holiday',
-        note: 'School will remain closed for Dussehra.',
-    },
-    {
-        id: '13',
-        title: 'Diwali Holiday',
-        date: `${currentYear}-11-12`,
-        type: 'Festival Holiday',
-        note: 'Holiday on the occasion of Diwali.',
-    },
-    {
-        id: '14',
-        title: 'Christmas',
-        date: `${currentYear}-12-25`,
-        type: 'Public Holiday',
-        note: 'Holiday on the occasion of Christmas.',
-    },
-];
+const buildApiUrl = (baseUrl, endpoint) => {
+    const cleanBase = baseUrl?.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    const cleanEndpoint = endpoint?.startsWith('/') ? endpoint.substring(1) : endpoint;
+
+    return `${cleanBase}${cleanEndpoint}`;
+};
+
+const parseLocalDate = dateString => {
+    if (!dateString) {
+        return null;
+    }
+
+    const parts = String(dateString).split('-');
+
+    if (parts.length < 3) {
+        const fallbackDate = new Date(dateString);
+        return Number.isNaN(fallbackDate.getTime()) ? null : fallbackDate;
+    }
+
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+
+    if (!year || !month || !day) {
+        return null;
+    }
+
+    return new Date(year, month - 1, day);
+};
+
+const formatDate = dateString => {
+    const date = parseLocalDate(dateString);
+
+    if (!date) {
+        return {
+            day: '',
+            month: '',
+            weekDay: '',
+            monthFull: '',
+            year: '',
+            dateText: '',
+        };
+    }
+
+    return {
+        day: date.getDate(),
+        month: defaultMonths[date.getMonth()]?.title || '',
+        weekDay: weekDays[date.getDay()],
+        monthFull: fullMonths[date.getMonth()],
+        year: date.getFullYear(),
+        dateText: `${weekDays[date.getDay()]}, ${fullMonths[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`,
+    };
+};
+
+const formatDateRange = (startDate, endDate) => {
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
+
+    if (!startDate) {
+        return '';
+    }
+
+    if (!endDate || startDate === endDate) {
+        return start.dateText;
+    }
+
+    return `${start.dateText} - ${end.dateText}`;
+};
+
+const normalizeHoliday = item => {
+    const startDate =
+        item?.start_date ||
+        item?.holiday_date ||
+        item?.date ||
+        '';
+
+    const endDate =
+        item?.end_date ||
+        item?.start_date ||
+        item?.holiday_date ||
+        item?.date ||
+        '';
+
+    const parsedDate = parseLocalDate(startDate);
+
+    return {
+        id: String(item?.id || `${item?.title || 'holiday'}-${startDate}`),
+        title: item?.title || item?.holiday_title || 'Holiday',
+        start_date: startDate,
+        end_date: endDate,
+        description: item?.description || item?.note || item?.details || '',
+        type: item?.type || item?.holiday_type || 'Holiday',
+        month_number: parsedDate ? parsedDate.getMonth() + 1 : '',
+        year: parsedDate ? parsedDate.getFullYear() : '',
+        raw: item,
+    };
+};
+
+const sortHolidays = list => {
+    return [...list].sort((a, b) => {
+        const dateA = parseLocalDate(a.start_date);
+        const dateB = parseLocalDate(b.start_date);
+
+        return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+    });
+};
+
+const uniqueHolidays = list => {
+    const map = new Map();
+
+    list.forEach(item => {
+        const key = String(item.id || `${item.title}-${item.start_date}`);
+        map.set(key, item);
+    });
+
+    return Array.from(map.values());
+};
 
 const HolidayList = () => {
     const { colors } = useTheme();
+    const { userData } = useSelector(state => state.User);
 
-    const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+    const [selectedMonth, setSelectedMonth] = useState(currentMonthNumber);
     const [showAllYear, setShowAllYear] = useState(false);
+
+    const [months, setMonths] = useState(defaultMonths);
+    const [monthHolidays, setMonthHolidays] = useState([]);
+    const [yearHolidays, setYearHolidays] = useState([]);
+
+    const [sessionId, setSessionId] = useState('');
+    const [totalYearlyHoliday, setTotalYearlyHoliday] = useState(0);
+    const [totalMonthlyHoliday, setTotalMonthlyHoliday] = useState(0);
+
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const primaryColor = '#178D45';
     const lightGreenColor = colors.lightGreen || '#E8F8EE';
     const cardBorderColor = colors.lightBlck || colors.border || '#E3E8E5';
-    const cardBackground = colors.background || colors.card || Colors.white2;
+    const cardBackground = colors.card || Colors.white2;
+    const screenBackground = colors.background || Colors.white2;
+
     const currentChipBg = '#FFF8E6';
     const currentChipBorder = '#F1C36D';
     const currentChipText = '#B7791F';
 
-    const sortedHolidays = useMemo(() => {
-        return [...holidayList].sort((a, b) => {
-            return new Date(a.date) - new Date(b.date);
-        });
-    }, []);
+    const getStudentId = useCallback(async () => {
+        const storedStudentId = await AsyncStorage.getItem('student_id');
+        const storedUserId = await AsyncStorage.getItem('user_id');
 
-    const filteredHolidays = useMemo(() => {
-        if (showAllYear) {
-            return sortedHolidays;
-        }
+        return (
+            userData?.student_id ||
+            userData?.studentId ||
+            userData?.student?.id ||
+            userData?.id ||
+            storedStudentId ||
+            storedUserId ||
+            ''
+        );
+    }, [userData]);
 
-        return sortedHolidays.filter(item => {
-            const itemDate = new Date(item.date);
-            return itemDate.getMonth() === selectedMonth;
-        });
-    }, [selectedMonth, showAllYear, sortedHolidays]);
+    const requestHolidayList = useCallback(
+        async monthNumber => {
+            const storedApiBase = await AsyncStorage.getItem('api_base_url');
+            const studentId = await getStudentId();
 
-    const totalHolidayCount = sortedHolidays.length;
+            if (!storedApiBase) {
+                throw new Error('API base URL not found. Please set api_base_url first.');
+            }
 
-    const currentMonthHolidayCount = useMemo(() => {
-        return sortedHolidays.filter(item => {
-            const itemDate = new Date(item.date);
-            return itemDate.getMonth() === currentMonth;
-        }).length;
-    }, [sortedHolidays]);
+            if (!studentId) {
+                throw new Error('Student ID not found.');
+            }
+
+            const API_URL = buildApiUrl(
+                storedApiBase,
+                'holidayList',
+            );
+
+            const form = new FormData();
+            form.append('month', String(monthNumber));
+            form.append('student_id', String(studentId));
+
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'X-API-KEY': API_KEY,
+                },
+                body: form,
+            });
+
+            const json = await res.json();
+
+            if (!json?.status) {
+                throw new Error(json?.message || 'Failed to load holiday list.');
+            }
+
+            return json?.data || {};
+        },
+        [getStudentId],
+    );
+
+    const fetchMonthHolidayList = useCallback(
+        async (monthNumber, isRefresh = false) => {
+            try {
+                if (!isRefresh) {
+                    setLoading(true);
+                }
+
+                setError('');
+
+                const data = await requestHolidayList(monthNumber);
+
+                const apiMonths =
+                    Array.isArray(data?.months) && data.months.length > 0
+                        ? data.months
+                        : defaultMonths;
+
+                const holidays =
+                    Array.isArray(data?.holiday_list)
+                        ? data.holiday_list.map(normalizeHoliday)
+                        : [];
+
+                setMonths(apiMonths);
+                setSessionId(data?.session_id || '');
+                setTotalYearlyHoliday(Number(data?.total_yearly_holiday || 0));
+                setTotalMonthlyHoliday(Number(data?.total_monthly_holiday || holidays.length || 0));
+                setMonthHolidays(sortHolidays(holidays));
+            } catch (e) {
+                setError(e?.message || 'Something went wrong.');
+                setMonthHolidays([]);
+                setTotalMonthlyHoliday(0);
+            } finally {
+                setLoading(false);
+                setRefreshing(false);
+            }
+        },
+        [requestHolidayList],
+    );
+
+    const fetchAllYearHolidayList = useCallback(
+        async (isRefresh = false) => {
+            try {
+                if (!isRefresh) {
+                    setLoading(true);
+                }
+
+                setError('');
+
+                const monthNumbers = defaultMonths.map(item => Number(item.month_number));
+
+                const responses = await Promise.all(
+                    monthNumbers.map(monthNumber => requestHolidayList(monthNumber)),
+                );
+
+                let allHolidays = [];
+                let apiMonths = defaultMonths;
+                let yearlyTotal = 0;
+                let latestSessionId = '';
+
+                responses.forEach(data => {
+                    if (Array.isArray(data?.months) && data.months.length > 0) {
+                        apiMonths = data.months;
+                    }
+
+                    if (data?.session_id) {
+                        latestSessionId = data.session_id;
+                    }
+
+                    if (data?.total_yearly_holiday) {
+                        yearlyTotal = Number(data.total_yearly_holiday);
+                    }
+
+                    if (Array.isArray(data?.holiday_list)) {
+                        allHolidays = [
+                            ...allHolidays,
+                            ...data.holiday_list.map(normalizeHoliday),
+                        ];
+                    }
+                });
+
+                const finalHolidayList = sortHolidays(uniqueHolidays(allHolidays));
+
+                setMonths(apiMonths);
+                setSessionId(latestSessionId);
+                setTotalYearlyHoliday(yearlyTotal || finalHolidayList.length);
+                setYearHolidays(finalHolidayList);
+            } catch (e) {
+                setError(e?.message || 'Something went wrong.');
+                setYearHolidays([]);
+            } finally {
+                setLoading(false);
+                setRefreshing(false);
+            }
+        },
+        [requestHolidayList],
+    );
+
+    useEffect(() => {
+        fetchMonthHolidayList(currentMonthNumber, false);
+    }, [fetchMonthHolidayList]);
 
     const onRefresh = () => {
         setRefreshing(true);
 
-        setTimeout(() => {
-            setRefreshing(false);
-        }, 700);
+        if (showAllYear) {
+            fetchAllYearHolidayList(true);
+        } else {
+            fetchMonthHolidayList(selectedMonth, true);
+        }
     };
 
-    const formatDate = dateString => {
-        const date = new Date(dateString);
-
-        return {
-            day: date.getDate(),
-            month: shortMonths[date.getMonth()],
-            weekDay: weekDays[date.getDay()],
-            monthFull: months[date.getMonth()],
-        };
+    const onMonthPress = monthNumber => {
+        setSelectedMonth(monthNumber);
+        setShowAllYear(false);
+        fetchMonthHolidayList(monthNumber, false);
     };
 
-    const renderMonthChip = (item, index) => {
-        const active = !showAllYear && selectedMonth === index;
-        const isCurrent = index === currentMonth;
+    const onAllYearPress = () => {
+        setShowAllYear(true);
+        fetchAllYearHolidayList(false);
+    };
+
+    const filteredHolidays = useMemo(() => {
+        return showAllYear ? yearHolidays : monthHolidays;
+    }, [showAllYear, yearHolidays, monthHolidays]);
+
+    const listTitle = useMemo(() => {
+        if (showAllYear) {
+            return 'All Holidays';
+        }
+
+        const monthTitle = months.find(
+            item => Number(item.month_number) === Number(selectedMonth),
+        )?.title;
+
+        const fullMonthName = fullMonths[selectedMonth - 1];
+
+        return `${fullMonthName || monthTitle || 'Month'} Holidays`;
+    }, [showAllYear, selectedMonth, months]);
+
+    const renderMonthChip = item => {
+        const monthNumber = Number(item.month_number);
+        const active = !showAllYear && Number(selectedMonth) === monthNumber;
+        const isCurrent = monthNumber === currentMonthNumber;
 
         return (
             <TouchableOpacity
-                key={item}
+                key={String(monthNumber)}
                 activeOpacity={0.8}
-                onPress={() => {
-                    setSelectedMonth(index);
-                    setShowAllYear(false);
-                }}
+                onPress={() => onMonthPress(monthNumber)}
                 style={[
                     styles.monthChip,
                     {
-                        backgroundColor: active ? lightGreenColor : isCurrent ? currentChipBg : cardBackground,
-                        borderColor: active ? primaryColor : isCurrent ? currentChipBorder : cardBorderColor,
+                        backgroundColor: active
+                            ? lightGreenColor
+                            : isCurrent
+                                ? currentChipBg
+                                : cardBackground,
+                        borderColor: active
+                            ? primaryColor
+                            : isCurrent
+                                ? currentChipBorder
+                                : cardBorderColor,
                     },
                 ]}>
                 <Text
                     style={[
                         styles.monthChipText,
                         {
-                            color: active ? primaryColor : isCurrent ? currentChipText : colors.text,
+                            color: active
+                                ? primaryColor
+                                : isCurrent
+                                    ? currentChipText
+                                    : colors.text,
                             opacity: active || isCurrent ? 1 : 0.72,
                         },
                     ]}>
-                    {item.slice(0, 3)}
+                    {item.title}
                 </Text>
 
                 {isCurrent && (
@@ -243,11 +456,12 @@ const HolidayList = () => {
     };
 
     const renderHolidayItem = (item, index) => {
-        const formatted = formatDate(item.date);
+        const formatted = formatDate(item.start_date);
+        const dateRangeText = formatDateRange(item.start_date, item.end_date);
 
         return (
             <View
-                key={item.id || index}
+                key={String(item.id || index)}
                 style={{
                     ...appStyles.card,
                     backgroundColor: cardBackground,
@@ -291,6 +505,7 @@ const HolidayList = () => {
                                 ]}>
                                 {formatted.day}
                             </Text>
+
                             <Text
                                 style={[
                                     styles.dateMonth,
@@ -315,13 +530,14 @@ const HolidayList = () => {
                                 />
 
                                 <Text
+                                    numberOfLines={2}
                                     style={[
                                         styles.description,
                                         {
                                             color: colors.text,
                                         },
                                     ]}>
-                                    {formatted.weekDay}, {formatted.monthFull} {currentYear}
+                                    {dateRangeText}
                                 </Text>
                             </View>
 
@@ -345,23 +561,25 @@ const HolidayList = () => {
                         </View>
                     </View>
 
-                    <Text
-                        numberOfLines={2}
-                        style={[
-                            styles.noteText,
-                            {
-                                color: colors.text,
-                            },
-                        ]}>
-                        {item.note}
-                    </Text>
+                    {!!item.description && (
+                        <Text
+                            numberOfLines={3}
+                            style={[
+                                styles.noteText,
+                                {
+                                    color: colors.text,
+                                },
+                            ]}>
+                            {item.description}
+                        </Text>
+                    )}
                 </View>
             </View>
         );
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.container, { backgroundColor: screenBackground }]}>
             <BackHeader
                 title="Holiday List"
                 onBackIconPress={() => {
@@ -371,7 +589,7 @@ const HolidayList = () => {
 
             <ScrollView
                 style={{
-                    backgroundColor: colors.background,
+                    backgroundColor: screenBackground,
                     width: '100%',
                 }}
                 refreshControl={
@@ -382,7 +600,7 @@ const HolidayList = () => {
                         tintColor={primaryColor}
                     />
                 }>
-                <View style={styles.main}>
+                <View style={[styles.main, { backgroundColor: screenBackground }]}>
                     <TitleHeader
                         title={'Your Holiday List is here!'}
                         image={Images.classRoutine}
@@ -419,8 +637,9 @@ const HolidayList = () => {
                                             color: colors.text,
                                         },
                                     ]}>
-                                    {currentMonthHolidayCount}
+                                    {totalMonthlyHoliday}
                                 </Text>
+
                                 <Text
                                     style={[
                                         styles.summaryLabel,
@@ -428,7 +647,7 @@ const HolidayList = () => {
                                             color: colors.text,
                                         },
                                     ]}>
-                                    This Month
+                                    Selected Month
                                 </Text>
                             </View>
                         </View>
@@ -439,6 +658,7 @@ const HolidayList = () => {
                                 {
                                     backgroundColor: cardBackground,
                                     borderColor: cardBorderColor,
+                                    marginRight: 0,
                                 },
                             ]}>
                             <View
@@ -459,8 +679,9 @@ const HolidayList = () => {
                                             color: colors.text,
                                         },
                                     ]}>
-                                    {totalHolidayCount}
+                                    {totalYearlyHoliday}
                                 </Text>
+
                                 <Text
                                     style={[
                                         styles.summaryLabel,
@@ -474,6 +695,22 @@ const HolidayList = () => {
                         </View>
                     </View>
 
+                    {!!sessionId && (
+                        <View
+                            style={[
+                                styles.sessionBox,
+                                {
+                                    backgroundColor: lightGreenColor,
+                                    borderColor: primaryColor,
+                                },
+                            ]}>
+                            <Icon name="school" size={14} color={primaryColor} />
+                            <Text style={[styles.sessionText, { color: primaryColor }]}>
+                                Session ID: {sessionId}
+                            </Text>
+                        </View>
+                    )}
+
                     <View style={styles.filterSection}>
                         <ScrollView
                             horizontal
@@ -481,9 +718,7 @@ const HolidayList = () => {
                             contentContainerStyle={styles.monthScrollContent}>
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                onPress={() => {
-                                    setShowAllYear(true);
-                                }}
+                                onPress={onAllYearPress}
                                 style={[
                                     styles.allYearButton,
                                     {
@@ -505,7 +740,7 @@ const HolidayList = () => {
                                 </Text>
                             </TouchableOpacity>
 
-                            {months.map((item, index) => renderMonthChip(item, index))}
+                            {months.map(item => renderMonthChip(item))}
                         </ScrollView>
                     </View>
 
@@ -517,9 +752,7 @@ const HolidayList = () => {
                                     color: colors.text,
                                 },
                             ]}>
-                            {showAllYear
-                                ? `All Holidays - ${currentYear}`
-                                : `${months[selectedMonth]} Holidays`}
+                            {listTitle}
                         </Text>
 
                         <Text
@@ -530,27 +763,61 @@ const HolidayList = () => {
                                     backgroundColor: lightGreenColor,
                                 },
                             ]}>
-                            {filteredHolidays.length} Holiday{filteredHolidays.length > 1 ? 's' : ''}
+                            {filteredHolidays.length} Holiday{filteredHolidays.length === 1 ? '' : 's'}
                         </Text>
                     </View>
 
+                    {error ? (
+                        <View
+                            style={[
+                                styles.errorBox,
+                                {
+                                    backgroundColor: cardBackground,
+                                    borderColor: cardBorderColor,
+                                },
+                            ]}>
+                            <Icon name="error-outline" size={32} color="#EF4444" />
+
+                            <Text style={styles.errorText}>
+                                {error}
+                            </Text>
+
+                            <TouchableOpacity
+                                activeOpacity={0.85}
+                                onPress={() => {
+                                    if (showAllYear) {
+                                        fetchAllYearHolidayList(false);
+                                    } else {
+                                        fetchMonthHolidayList(selectedMonth, false);
+                                    }
+                                }}
+                                style={[styles.retryButton, { backgroundColor: primaryColor }]}>
+                                <Icon name="refresh" size={16} color="#FFFFFF" />
+                                <Text style={styles.retryText}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : null}
+
                     <View>
-                        {!loading && filteredHolidays.map((item, index) => renderHolidayItem(item, index))}
+                        {!loading && !error && filteredHolidays.map((item, index) =>
+                            renderHolidayItem(item, index),
+                        )}
 
                         {loading && (
                             <ActivityIndicator
                                 size={28}
                                 color={primaryColor}
-                                style={{ marginTop: screenHeight / 3 }}
+                                style={{ marginTop: screenHeight / 4 }}
                             />
                         )}
 
-                        {filteredHolidays.length === 0 && !loading && (
+                        {filteredHolidays.length === 0 && !loading && !error && (
                             <View style={styles.emptyBox}>
                                 <Image
                                     source={Images.NoDataFound}
                                     style={styles.emptyImage}
                                 />
+
                                 <Text
                                     style={[
                                         styles.emptyTitle,
@@ -560,6 +827,7 @@ const HolidayList = () => {
                                     ]}>
                                     No holidays found
                                 </Text>
+
                                 <Text
                                     style={[
                                         styles.emptySubTitle,
@@ -567,7 +835,9 @@ const HolidayList = () => {
                                             color: colors.text,
                                         },
                                     ]}>
-                                    There is no holiday added for {months[selectedMonth]} {currentYear}.
+                                    {showAllYear
+                                        ? 'There is no holiday added for this year.'
+                                        : `There is no holiday added for ${fullMonths[selectedMonth - 1] || 'this month'}.`}
                                 </Text>
                             </View>
                         )}
@@ -596,7 +866,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginTop: moderateScale(6),
         marginBottom: moderateScale(6),
-        gap: moderateScale(8),
     },
     summaryCard: {
         flex: 1,
@@ -606,6 +875,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 0.5,
+        marginRight: moderateScale(8),
     },
     summaryIconBox: {
         width: moderateScale(32),
@@ -627,12 +897,28 @@ const styles = StyleSheet.create({
         opacity: 0.7,
         marginTop: moderateScale(1),
     },
+    sessionBox: {
+        alignSelf: 'flex-start',
+        borderWidth: 0.5,
+        borderRadius: moderateScale(15),
+        paddingHorizontal: moderateScale(10),
+        paddingVertical: moderateScale(5),
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: moderateScale(2),
+        marginBottom: moderateScale(5),
+    },
+    sessionText: {
+        fontSize: moderateScale(10),
+        fontWeight: '500',
+        marginLeft: moderateScale(5),
+    },
     filterSection: {
         marginTop: moderateScale(8),
     },
     monthScrollContent: {
         paddingVertical: moderateScale(3),
-        gap: moderateScale(7),
+        paddingRight: moderateScale(10),
     },
     allYearButton: {
         height: moderateScale(32),
@@ -641,11 +927,12 @@ const styles = StyleSheet.create({
         borderWidth: 0.5,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: moderateScale(5),
+        marginRight: moderateScale(7),
     },
     allYearText: {
         fontSize: moderateScale(11),
         fontWeight: '500',
+        marginLeft: moderateScale(5),
     },
     monthChip: {
         height: moderateScale(32),
@@ -655,6 +942,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: moderateScale(10),
+        marginRight: moderateScale(7),
     },
     monthChipText: {
         fontSize: moderateScale(11),
@@ -674,8 +962,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     listTitle: {
+        flex: 1,
         fontSize: moderateScale(14),
         fontWeight: '500',
+        paddingRight: moderateScale(8),
     },
     listCount: {
         fontSize: moderateScale(10),
@@ -730,6 +1020,7 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
     description: {
+        flex: 1,
         fontSize: moderateScale(11),
         fontWeight: '500',
         marginLeft: moderateScale(8),
@@ -777,5 +1068,36 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: moderateScale(7),
         lineHeight: moderateScale(18),
+    },
+    errorBox: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: moderateScale(24),
+        paddingHorizontal: moderateScale(18),
+        borderRadius: moderateScale(18),
+        borderWidth: 0.5,
+        marginTop: moderateScale(12),
+        marginBottom: moderateScale(12),
+    },
+    errorText: {
+        marginTop: moderateScale(8),
+        color: '#EF4444',
+        textAlign: 'center',
+        fontSize: moderateScale(12),
+        lineHeight: moderateScale(18),
+    },
+    retryButton: {
+        marginTop: moderateScale(12),
+        paddingHorizontal: moderateScale(14),
+        paddingVertical: moderateScale(8),
+        borderRadius: moderateScale(18),
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    retryText: {
+        color: '#FFFFFF',
+        fontSize: moderateScale(11),
+        fontWeight: '600',
+        marginLeft: moderateScale(5),
     },
 });
