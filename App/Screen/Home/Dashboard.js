@@ -31,7 +31,7 @@ let Elearnings = [
     name: 'Homework',
     image: Images.homeworkColor,
     onItemPress: () => {
-      NavigationService.navigate('Homework');
+      NavigationService.navigate('HomeworkV2');
     },
   },
   {
@@ -44,7 +44,6 @@ let Elearnings = [
     image: Images.lessonPlan2,
     onItemPress: () => NavigationService.navigate('LessonPlan'),
   },
-
   {
     name: 'Timetable',
     image: Images.classRoutine,
@@ -55,13 +54,11 @@ let Elearnings = [
     image: Images.attendanceReport,
     onItemPress: () => NavigationService.navigate('Attendance'),
   },
-
   {
     name: 'Notice Board',
     image: Images.Board,
     onItemPress: () => NavigationService.navigate('NoticeBoard'),
   },
-
   {
     name: 'Fees',
     image: Images.feesPayment,
@@ -500,6 +497,178 @@ const Dashboard = () => {
             </View>
           ) : null}
 
+          {/* Due Fee Reminder Section - Place this above Notice section */}
+          {userData?.type == 'student' && (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => NavigationService.navigate('Fees')}
+              style={{
+                width: '95%',
+                alignSelf: 'center',
+                marginTop: 15,
+                backgroundColor: colors.background,
+                borderRadius: 14,
+                borderWidth: 0.5,
+                borderColor: colors.lightBlck,
+                elevation: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.12,
+                shadowRadius: 5,
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              {/* Left Icon Area */}
+              <View
+                style={{
+                  width: 50,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 10,
+                }}
+              >
+                <View
+                  style={{
+                    height: 38,
+                    width: 38,
+                    borderRadius: 12,
+                    backgroundColor: '#FFF3E8',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Image
+                    source={Images.feesPayment}
+                    style={{
+                      height: 24,
+                      width: 24,
+                      resizeMode: 'contain',
+                    }}
+                  />
+                </View>
+
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: 4,
+                    height: 16,
+                    width: 16,
+                    borderRadius: 8,
+                    backgroundColor: '#FF4D4D',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontSize: textSize(9), fontWeight: '900' }}>
+                    !
+                  </Text>
+                </View>
+              </View>
+
+              {/* Middle Content */}
+              <View style={{ flex: 1 }}>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: colors.text,
+                    fontSize: textSize(12),
+                    fontWeight: '900',
+                  }}
+                >
+                  Due Fee Reminder
+                </Text>
+
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: colors.text,
+                    opacity: 0.65,
+                    fontSize: textSize(9),
+                    marginTop: 3,
+                    fontWeight: '500',
+                  }}
+                >
+                  Fee payment is pending
+                </Text>
+
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: colors.text,
+                    opacity: 0.7,
+                    fontSize: textSize(9),
+                    marginTop: 3,
+                  }}
+                >
+                  Please pay before{' '}
+                  <Text style={{ color: '#FF4D4D', fontWeight: '800' }}>
+                    {dashboardSection?.due_payment?.due_date || dashboardSection?.fees_due_date || '15 Jun 2026'}
+                  </Text>
+                </Text>
+              </View>
+
+              {/* Divider */}
+              <View
+                style={{
+                  height: 55,
+                  width: 1,
+                  backgroundColor: colors.lightBlck,
+                  opacity: 0.5,
+                  marginHorizontal: 10,
+                }}
+              />
+
+              {/* Right Amount Area */}
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <Text
+                  style={{
+                    color: colors.text,
+                    opacity: 0.7,
+                    fontSize: textSize(8),
+                    fontWeight: '700',
+                  }}
+                >
+                  Amount Due
+                </Text>
+
+                <Text
+                  style={{
+                    color: '#FF4D4D',
+                    fontSize: textSize(16),
+                    fontWeight: '900',
+                    marginTop: 2,
+                  }}
+                >
+                  ₹{dashboardSection?.due_payment?.amount || dashboardSection?.fees_due || '2,500'}
+                </Text>
+
+                <View
+                  style={{
+                    backgroundColor: '#FF6B35',
+                    paddingHorizontal: 13,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                    marginTop: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: '#fff',
+                      fontSize: textSize(9),
+                      fontWeight: '800',
+                    }}
+                  >
+                    Pay Now ›
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+
           {notices.length > 0 && (
             <View
               style={{
@@ -797,11 +966,6 @@ const Dashboard = () => {
                     })}
                 </View>
               </View>
-              {/* Change Password Modal */}
-              <ChangePasswordModal
-                visible={showChangePassword}
-                onClose={() => setShowChangePassword(false)}
-              />
             </ScrollView>
           )}
 
@@ -871,6 +1035,11 @@ const Dashboard = () => {
           )}
         </View>
       </ScrollView>
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        visible={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </View>
   );
 };
