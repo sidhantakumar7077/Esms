@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    Image,
     Platform,
     Pressable,
     RefreshControl,
@@ -42,6 +41,31 @@ const getNotificationId = (item, index = 0) => {
         item?.app_notification_id ||
         item?.uid ||
         `${item?.title || item?.notification_title || 'notification'}-${index}`
+    );
+};
+
+const getMarkableNotificationId = item => {
+    const id =
+        item?.notification_id ||
+        item?.id ||
+        item?.notice_id ||
+        item?.app_notification_id ||
+        item?.uid;
+
+    if (id === null || id === undefined || String(id).trim() === '') {
+        return null;
+    }
+
+    return String(id).trim();
+};
+
+const getUniqueIds = ids => {
+    return Array.from(
+        new Set(
+            ids
+                .map(id => String(id || '').trim())
+                .filter(id => id && id !== '0'),
+        ),
     );
 };
 
@@ -153,9 +177,46 @@ const mergeUniqueNotifications = (oldRows, newRows) => {
     return Array.from(map.values());
 };
 
+const postNotificationApi = async ({
+    apiUrl,
+    userId,
+    page = 1,
+    notificationId = '0',
+}) => {
+    const form = new FormData();
+
+    form.append('user_id', String(userId || ''));
+    form.append('page', String(page || 1));
+
+    /**
+     * IMPORTANT:
+     * notification_id = 0 means only fetch notification list.
+     * notification_id = 9146,9089 means mark those notifications as seen.
+     */
+    form.append('notification_id', String(notificationId || '0'));
+
+    const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'X-API-KEY': API_KEY,
+        },
+        body: form,
+    });
+
+    const json = await res.json();
+
+    if (!json?.status) {
+        throw new Error(json?.message || 'Failed to load notifications.');
+    }
+
+    return json;
+};
+
 const Notification = () => {
     const { colors } = useTheme();
     const { userData } = useSelector(state => state.User);
+
+    const markingSeenIdsRef = useRef(new Set());
 
     const [activeFilter, setActiveFilter] = useState('All');
 
@@ -183,6 +244,70 @@ const Notification = () => {
     const selectedTotalCount = activeFilter === 'Unread' ? unreadCount : allCount;
 
     const canLoadMore = filteredNotifications.length < selectedTotalCount;
+
+    const markNotificationsSeen = useCallback(
+        async ({
+            apiUrl,
+            userId,
+            targetPage = 1,
+            ids = [],
+        }) => {
+            const uniqueIds = getUniqueIds(ids);
+
+            const idsToSend = uniqueIds.filter(id => !markingSeenIdsRef.current.has(id));
+
+            if (idsToSend.length === 0) {
+                return;
+            }
+
+            idsToSend.forEach(id => {
+                markingSeenIdsRef.current.add(id);
+            });
+
+            try {
+                const markSeenJson = await postNotificationApi({
+                    apiUrl,
+                    userId,
+                    page: targetPage,
+                    notificationId: idsToSend.join(','),
+                });
+
+                const markedIdSet = new Set(idsToSend.map(String));
+
+                setAllRows(prev =>
+                    prev.map(row =>
+                        markedIdSet.has(String(row.id))
+                            ? {
+                                ...row,
+                                unread: false,
+                            }
+                            : row,
+                    ),
+                );
+
+                setUnreadRows(prev =>
+                    prev.filter(row => !markedIdSet.has(String(row.id))),
+                );
+
+                if (markSeenJson?.all_notifications_count !== undefined) {
+                    setAllCount(Number(markSeenJson.all_notifications_count || 0));
+                }
+
+                if (markSeenJson?.unread_notifications_count !== undefined) {
+                    setUnreadCount(Number(markSeenJson.unread_notifications_count || 0));
+                } else {
+                    setUnreadCount(prev => Math.max(prev - idsToSend.length, 0));
+                }
+            } catch (e) {
+                idsToSend.forEach(id => {
+                    markingSeenIdsRef.current.delete(id);
+                });
+
+                console.log('Mark notification seen failed:', e?.message || e);
+            }
+        },
+        [],
+    );
 
     const fetchNotifications = useCallback(
         async (targetPage = 1, isRefresh = false) => {
@@ -214,23 +339,16 @@ const Notification = () => {
 
                 setError('');
 
-                const form = new FormData();
-                form.append('user_id', String(user_id));
-                form.append('page', String(targetPage));
-
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'X-API-KEY': API_KEY,
-                    },
-                    body: form,
+                /**
+                 * First API call:
+                 * Send notification_id = 0 because we only want to fetch the list.
+                 */
+                const json = await postNotificationApi({
+                    apiUrl: API_URL,
+                    userId: user_id,
+                    page: targetPage,
+                    notificationId: '0',
                 });
-
-                const json = await res.json();
-
-                if (!json?.status) {
-                    throw new Error(json?.message || 'Failed to load notifications.');
-                }
 
                 const allNotifications = Array.isArray(json?.all_notifications)
                     ? json.all_notifications
@@ -240,9 +358,9 @@ const Notification = () => {
                     ? json.unread_notifications_list
                     : [];
 
-                const unreadIds = unreadNotifications.map((item, index) =>
-                    String(getNotificationId(item, index)),
-                );
+                const unreadIds = unreadNotifications
+                    .map(item => getMarkableNotificationId(item))
+                    .filter(Boolean);
 
                 const normalizedAll = allNotifications.map((item, index) =>
                     normalizeNotification(item, index, unreadIds, false),
@@ -264,8 +382,37 @@ const Notification = () => {
                 }
 
                 setPage(targetPage);
+
+                /**
+                 * Find all unseen notification IDs from current response.
+                 * If unread IDs exist, call same API again in background
+                 * using notification_id = 9146,9089.
+                 */
+                const unreadIdsFromAll = normalizedAll
+                    .filter(item => item.unread)
+                    .map(item => getMarkableNotificationId(item.raw))
+                    .filter(Boolean);
+
+                const unreadIdsFromUnreadList = normalizedUnread
+                    .map(item => getMarkableNotificationId(item.raw))
+                    .filter(Boolean);
+
+                const idsToMarkSeen = getUniqueIds([
+                    ...unreadIdsFromAll,
+                    ...unreadIdsFromUnreadList,
+                ]);
+
+                if (idsToMarkSeen.length > 0) {
+                    markNotificationsSeen({
+                        apiUrl: API_URL,
+                        userId: user_id,
+                        targetPage,
+                        ids: idsToMarkSeen,
+                    });
+                }
             } catch (e) {
                 setError(e?.message || 'Something went wrong.');
+
                 if (targetPage === 1) {
                     setAllRows([]);
                     setUnreadRows([]);
@@ -276,7 +423,7 @@ const Notification = () => {
                 setRefreshing(false);
             }
         },
-        [userData?.id],
+        [markNotificationsSeen, userData?.id],
     );
 
     useEffect(() => {
@@ -346,7 +493,7 @@ const Notification = () => {
                         <Icon
                             name={NOTIFICATION_ICON}
                             size={moderateScale(17)}
-                            color={primaryColor}
+                            color={item.unread ? '#fb483a' : primaryColor}
                         />
                     </View>
 

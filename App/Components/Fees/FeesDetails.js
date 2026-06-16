@@ -20,6 +20,7 @@ import {
   UIManager,
   View,
   FlatList,
+  Linking,
 } from 'react-native';
 import { useTheme, useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -27,6 +28,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../Constants/Colors';
 import { Images } from '../../Constants/Images';
 import { moderateScale, screenHeight } from '../../Constants/PixelRatio';
+import rndownloadFile from '../../Utils/rndownload';
 
 import PaymentHelper from './PaymentHelper';
 import UseApi from '../../ApiConfig';
@@ -68,6 +70,7 @@ const FeesDetails = forwardRef(
 
     useEffect(() => {
       setPayment_mode(paymentModeFromParent ?? defultSetting?.payment_mode ?? null);
+      console.log("Payment Details", paymentModeFromParent ?? defultSetting?.payment_mode ?? null);
     }, [paymentModeFromParent, defultSetting]);
 
     useImperativeHandle(
@@ -239,7 +242,7 @@ const FeesDetails = forwardRef(
 
     const BASE_MERCHANT = useMemo(() => {
       const mode = normalizeEnv(paymentCreds?.mode ?? paymentCreds?.Mode ?? 'prod');
-      
+
       // Construct dynamic callback URL
       const baseUrl = defultSetting?.base_url;
       const callbackUrl = `${baseUrl}user/gateway/atompay/callback`;
@@ -402,6 +405,100 @@ const FeesDetails = forwardRef(
         Alert.alert('Payment error', e?.message ?? 'Something went wrong while starting payment.');
       } finally {
         setPayLoading(false);
+      }
+    };
+
+    const getUpiIdFromPaymentMode = () => {
+      const text = [
+        payment_mode?.upi_id,
+        payment_mode?.upi,
+        payment_mode?.upiId,
+        payment_mode?.vpa,
+        payment_mode?.bank_acount_details,
+      ]
+        .filter(Boolean)
+        .join(',');
+
+      const match = String(text).match(/[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z0-9.\-_]{2,64}/);
+      return match ? match[0] : '';
+    };
+
+    const qrUpiId = useMemo(() => {
+      return getUpiIdFromPaymentMode();
+    }, [payment_mode]);
+
+    const qrPayAmount = useMemo(() => {
+      const allFees = [
+        ...(Array.isArray(studentDueFees) ? studentDueFees : []),
+        ...(Array.isArray(transportFees) ? transportFees : []),
+      ];
+
+      const total = allFees.reduce((sum, item) => {
+        const status = String(item?.status ?? '').toLowerCase();
+
+        if (status !== 'unpaid' && status !== 'partial') {
+          return sum;
+        }
+
+        const payable = getPayableAmount(item);
+        const fine = normalizeAmount(item?.fine_amount);
+        const discount = normalizeAmount(item?.discount_amount);
+        const netAmount = payable + fine - discount;
+
+        return sum + Math.max(netAmount, 0);
+      }, 0);
+
+      return Number(total.toFixed(2));
+    }, [studentDueFees, transportFees]);
+
+    const downloadQrCode = async () => {
+      try {
+        if (!payment_mode?.qr_image) {
+          Alert.alert('QR Missing', 'QR image is not available.');
+          return;
+        }
+
+        await rndownloadFile(payment_mode.qr_image);
+      } catch (error) {
+        console.log('QR download error:', error);
+        Alert.alert('Download Failed', 'Unable to download QR code.');
+      }
+    };
+
+    const payUsingUpi = async () => {
+      try {
+        const upiId = qrUpiId;
+
+        if (!upiId) {
+          Alert.alert('UPI Missing', 'UPI ID is not available.');
+          return;
+        }
+
+        const payeeName =
+          payment_mode?.payee_name ||
+          payment_mode?.account_holder_name ||
+          payment_mode?.title ||
+          'School Fee Payment';
+
+        const note = `Fee Payment - ${userData?.name || 'Student'}`;
+
+        let upiUrl =
+          `upi://pay?pa=${encodeURIComponent(upiId)}` +
+          `&pn=${encodeURIComponent(payeeName)}` +
+          `&cu=INR` +
+          `&tn=${encodeURIComponent(note)}`;
+
+        if (qrPayAmount > 0) {
+          upiUrl += `&am=${encodeURIComponent(qrPayAmount.toFixed(2))}`;
+        }
+
+        await Linking.openURL(upiUrl);
+      } catch (error) {
+        console.log('UPI open error:', error);
+        Alert.alert(
+          'Payment App Not Found',
+          'No UPI payment app found on this phone.'
+        );
       }
     };
 
@@ -715,6 +812,18 @@ const FeesDetails = forwardRef(
                   <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                     {payment_mode?.qr_image ? (
                       <View style={styles.modalQrCard}>
+                        <View style={styles.qrCardHeader}>
+                          <Text style={styles.qrCardTitle}>Scan QR Code</Text>
+
+                          <TouchableOpacity
+                            onPress={downloadQrCode}
+                            activeOpacity={0.85}
+                            style={styles.qrDownloadBtn}
+                          >
+                            <Ionicons name="download-outline" size={18} color={Colors.Green1} />
+                          </TouchableOpacity>
+                        </View>
+
                         <Image
                           source={{ uri: payment_mode.qr_image }}
                           resizeMode="contain"
@@ -743,11 +852,34 @@ const FeesDetails = forwardRef(
                             </View>
                           );
                         })}
+                        {payment_mode.upi &&
+                          <View style={styles.modalBankRow}>
+                            <Text style={styles.modalBankLabel} numberOfLines={2}>
+                              UPI:
+                            </Text>
+                            <Text style={styles.modalBankValue} numberOfLines={2}>
+                              {payment_mode.upi}
+                            </Text>
+                          </View>
+                        }
                       </View>
                     ) : null}
                   </ScrollView>
 
                   <View style={styles.modalButtonsRow}>
+                    {qrUpiId ? (
+                      <TouchableOpacity
+                        onPress={payUsingUpi}
+                        activeOpacity={0.9}
+                        style={styles.modalPayNowBtn}
+                      >
+                        <Ionicons name="wallet-outline" size={18} color={Colors.white2} />
+                        <Text style={styles.modalPayNowText}>
+                          {qrPayAmount > 0 ? `Pay ₹${qrPayAmount.toFixed(2)}` : 'Pay Now'}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+
                     <TouchableOpacity
                       onPress={() => setShowBankDetailsModal(false)}
                       activeOpacity={0.85}
@@ -1007,9 +1139,53 @@ const styles = StyleSheet.create({
   modalBankRow: { flexDirection: 'row', marginBottom: moderateScale(6) },
   modalBankLabel: { width: '32%', fontSize: moderateScale(12), color: '#6B7280' },
   modalBankValue: { width: '68%', fontSize: moderateScale(13), color: Colors.black, fontWeight: '500' },
-  modalButtonsRow: { marginTop: moderateScale(14) },
+  modalButtonsRow: {
+    marginTop: moderateScale(14),
+    gap: moderateScale(10),
+  },
   modalBtnSecondary: { paddingVertical: moderateScale(10), borderRadius: 999, borderWidth: 1, borderColor: '#D1D5DB', alignItems: 'center' },
   modalBtnSecondaryText: { fontSize: moderateScale(14), color: '#374151', fontWeight: '500' },
+
+  qrCardHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: moderateScale(10),
+  },
+
+  qrCardTitle: {
+    fontSize: moderateScale(13),
+    fontWeight: '700',
+    color: Colors.black,
+  },
+
+  qrDownloadBtn: {
+    height: moderateScale(34),
+    width: moderateScale(34),
+    borderRadius: moderateScale(10),
+    backgroundColor: 'rgba(16,185,129,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(16,185,129,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  modalPayNowBtn: {
+    height: moderateScale(46),
+    borderRadius: 999,
+    backgroundColor: Colors.Green1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: moderateScale(8),
+  },
+
+  modalPayNowText: {
+    fontSize: moderateScale(14),
+    fontWeight: '800',
+    color: Colors.white2,
+  },
 
   cartSheet: {
     backgroundColor: Colors.white2,

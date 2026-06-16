@@ -82,6 +82,12 @@ let Elearnings = [
     width: '25%',
     onItemPress: () => NavigationService.navigate('Examination'),
   },
+  {
+    name: 'LMS',
+    image: Images.examresult,
+    width: '23%',
+    onItemPress: () => NavigationService.navigate('LMS'),
+  },
 
   // { name: 'Online Course', image: Images.onlineCourse },
   // { name: 'Zoom Live Classes', image: Images.zoom },
@@ -180,6 +186,7 @@ const Dashboard = () => {
     teacher_list: [],
     upcomming_classes: [],
     help_desk: {},
+    due_fees: [],
   });
 
   useEffect(() => {
@@ -339,7 +346,8 @@ const Dashboard = () => {
       class_id: userData?.class_id,
       section_id: userData?.section_id,
       type: 1,
-      student_session_id: userData?.student_session_id,
+      user_id: userData?.id,
+      // student_session_id: userData?.student_session_id,
     };
 
     // console.log("object", params);
@@ -364,6 +372,15 @@ const Dashboard = () => {
     }
     setLoading(false);
   };
+
+  const dueFeeData = useMemo(() => {
+    const dueFees = dashboardSection?.due_fees;
+    return Array.isArray(dueFees) && dueFees.length > 0 ? dueFees[0] : null;
+  }, [dashboardSection?.due_fees]);
+
+  const pendingFeeAmount = dueFeeData?.pending_fees_amount
+    ? Number(dueFeeData.pending_fees_amount).toLocaleString('en-IN')
+    : '0';
 
   const userImage = userData?.image?.replace('//uploads/student_images', '');
 
@@ -497,8 +514,8 @@ const Dashboard = () => {
             </View>
           ) : null}
 
-          {/* Due Fee Reminder Section - Place this above Notice section */}
-          {userData?.type == 'student' && (
+          {/* Due Fee Reminder Section - Dynamic */}
+          {userData?.type == 'student' && dueFeeData && Number(dueFeeData?.pending_fees_amount || 0) > 0 && (
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => NavigationService.navigate('Fees')}
@@ -579,7 +596,7 @@ const Dashboard = () => {
                     fontWeight: '900',
                   }}
                 >
-                  Due Fee Reminder
+                  {dueFeeData?.title || 'Fee Payment Is Pending'}
                 </Text>
 
                 <Text
@@ -592,7 +609,7 @@ const Dashboard = () => {
                     fontWeight: '500',
                   }}
                 >
-                  Fee payment is pending
+                  {dueFeeData?.sub_title || 'Please Pay Before'}
                 </Text>
 
                 <Text
@@ -604,9 +621,9 @@ const Dashboard = () => {
                     marginTop: 3,
                   }}
                 >
-                  Please pay before{' '}
+                  Last date:{' '}
                   <Text style={{ color: '#FF4D4D', fontWeight: '800' }}>
-                    {dashboardSection?.due_payment?.due_date || dashboardSection?.fees_due_date || '15 Jun 2026'}
+                    {dueFeeData?.last_fees_date_text || 'N/A'}
                   </Text>
                 </Text>
               </View>
@@ -643,7 +660,7 @@ const Dashboard = () => {
                     marginTop: 2,
                   }}
                 >
-                  ₹{dashboardSection?.due_payment?.amount || dashboardSection?.fees_due || '2,500'}
+                  ₹{pendingFeeAmount}
                 </Text>
 
                 <View
