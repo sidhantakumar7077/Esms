@@ -515,154 +515,145 @@ const Dashboard = () => {
           ) : null}
 
           {/* Due Fee Reminder Section - Dynamic */}
-          {userData?.type == 'student' && dueFeeData && Number(dueFeeData?.pending_fees_amount || 0) > 0 && (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => NavigationService.navigate('Fees')}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => NavigationService.navigate('Fees')}
+            style={{
+              width: '95%',
+              alignSelf: 'center',
+              marginTop: 15,
+              backgroundColor: colors.background,
+              borderRadius: 14,
+              borderWidth: 0.5,
+              borderColor: colors.lightBlck,
+              elevation: 4,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.12,
+              shadowRadius: 5,
+              paddingVertical: 12,
+              paddingHorizontal: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            {/* Left Icon Area */}
+            <View
               style={{
-                width: '95%',
-                alignSelf: 'center',
-                marginTop: 15,
-                backgroundColor: colors.background,
-                borderRadius: 14,
-                borderWidth: 0.5,
-                borderColor: colors.lightBlck,
-                elevation: 4,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.12,
-                shadowRadius: 5,
-                paddingVertical: 12,
-                paddingHorizontal: 12,
-                flexDirection: 'row',
+                width: 50,
                 alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 10,
               }}
             >
-              {/* Left Icon Area */}
               <View
                 style={{
-                  width: 50,
+                  height: 38,
+                  width: 38,
+                  borderRadius: 12,
+                  backgroundColor: '#FFF3E8',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginRight: 10,
                 }}
               >
-                <View
+                <Image
+                  source={Images.feesPayment}
                   style={{
-                    height: 38,
-                    width: 38,
-                    borderRadius: 12,
-                    backgroundColor: '#FFF3E8',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    height: 24,
+                    width: 24,
+                    resizeMode: 'contain',
                   }}
-                >
-                  <Image
-                    source={Images.feesPayment}
-                    style={{
-                      height: 24,
-                      width: 24,
-                      resizeMode: 'contain',
-                    }}
-                  />
-                </View>
-
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: -4,
-                    right: 4,
-                    height: 16,
-                    width: 16,
-                    borderRadius: 8,
-                    backgroundColor: '#FF4D4D',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: textSize(9), fontWeight: '900' }}>
-                    !
-                  </Text>
-                </View>
+                />
               </View>
 
-              {/* Middle Content */}
-              <View style={{ flex: 1 }}>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: colors.text,
-                    fontSize: textSize(12),
-                    fontWeight: '900',
-                  }}
-                >
-                  {dueFeeData?.title || 'Fee Payment Is Pending'}
-                </Text>
-
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: colors.text,
-                    opacity: 0.65,
-                    fontSize: textSize(9),
-                    marginTop: 3,
-                    fontWeight: '500',
-                  }}
-                >
-                  {dueFeeData?.sub_title || 'Please Pay Before'}
-                </Text>
-
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: colors.text,
-                    opacity: 0.7,
-                    fontSize: textSize(9),
-                    marginTop: 3,
-                  }}
-                >
-                  Last date:{' '}
-                  <Text style={{ color: '#FF4D4D', fontWeight: '800' }}>
-                    {dueFeeData?.last_fees_date_text || 'N/A'}
-                  </Text>
-                </Text>
-              </View>
-
-              {/* Divider */}
               <View
                 style={{
-                  height: 55,
-                  width: 1,
-                  backgroundColor: colors.lightBlck,
-                  opacity: 0.5,
-                  marginHorizontal: 10,
+                  position: 'absolute',
+                  top: -4,
+                  right: 4,
+                  height: 16,
+                  width: 16,
+                  borderRadius: 8,
+                  backgroundColor: '#FF4D4D',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
-              />
-
-              {/* Right Amount Area */}
-              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Text
-                  style={{
-                    color: colors.text,
-                    opacity: 0.7,
-                    fontSize: textSize(8),
-                    fontWeight: '700',
-                  }}
-                >
-                  Amount Due
+              >
+                <Text style={{ color: '#fff', fontSize: textSize(9), fontWeight: '900' }}>
+                  !
                 </Text>
+              </View>
+            </View>
 
-                <Text
-                  style={{
-                    color: '#FF4D4D',
-                    fontSize: textSize(16),
-                    fontWeight: '900',
-                    marginTop: 2,
-                  }}
-                >
-                  ₹{pendingFeeAmount}
+            {/* Middle Content */}
+            <View style={{ flex: 1 }}>
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: colors.text,
+                  fontSize: textSize(12),
+                  fontWeight: '900',
+                }}
+              >
+                {dueFeeData?.title || 'Fee Payment Is Pending'}
+              </Text>
+
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: colors.text,
+                  opacity: 0.65,
+                  fontSize: textSize(9),
+                  marginTop: 3,
+                  fontWeight: '500',
+                }}
+              >
+                {dueFeeData?.sub_title || 'Please Pay Before'}
+              </Text>
+
+              {dueFeeData?.last_fees_date_text &&
+                <Text style={{ color: '#FF4D4D', fontWeight: '800' }}>
+                  {dueFeeData.last_fees_date_text}
                 </Text>
+              }
+            </View>
 
+            {/* Divider */}
+            <View
+              style={{
+                height: 55,
+                width: 1,
+                backgroundColor: colors.lightBlck,
+                opacity: 0.5,
+                marginHorizontal: 10,
+              }}
+            />
+
+            {/* Right Amount Area */}
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <Text
+                style={{
+                  color: colors.text,
+                  opacity: 0.7,
+                  fontSize: textSize(8),
+                  fontWeight: '700',
+                }}
+              >
+                Amount Due
+              </Text>
+
+              <Text
+                style={{
+                  color: '#FF4D4D',
+                  fontSize: textSize(16),
+                  fontWeight: '900',
+                  marginTop: 2,
+                }}
+              >
+                ₹{pendingFeeAmount}
+              </Text>
+
+              {userData?.type == 'student' && dueFeeData && Number(dueFeeData?.pending_fees_amount || 0) > 0 && (
                 <View
                   style={{
                     backgroundColor: '#FF6B35',
@@ -682,9 +673,9 @@ const Dashboard = () => {
                     Pay Now ›
                   </Text>
                 </View>
-              </View>
-            </TouchableOpacity>
-          )}
+              )}
+            </View>
+          </TouchableOpacity>
 
           {notices.length > 0 && (
             <View
