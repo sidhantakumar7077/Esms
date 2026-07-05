@@ -46,17 +46,14 @@ const Index = ({ navigation }) => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
 
   const fetchVideos = async () => {
     const storedApiBase = await AsyncStorage.getItem('api_base_url');
     const API_URL = `${storedApiBase}video-tutorial-list`;
-    // console.log("Base Url", storedApiBase);          // https://ssec.esms.live/api/apicontroller/
-    try {
-      setError(null);
 
+    try {
       if (!userData?.id) {
-        setError('User ID not found');
+        setVideos([]);
         setLoading(false);
         setRefreshing(false);
         return;
@@ -72,15 +69,13 @@ const Index = ({ navigation }) => {
         },
       });
 
-      if (res.data?.status && Array.isArray(res.data.data)) {
-        setVideos(res.data.data);
+      if (Array.isArray(res.data?.data)) {
+        setVideos(res.data.data || []);
       } else {
-        setError(res.data?.message || 'Failed to load videos');
-        // console.log("Error -=-=-=", res.data);
+        setVideos([]);
       }
     } catch (e) {
-      // console.log('Fetch videos error:', e?.message, e?.response?.data);
-      setError('Failed to load videos');
+      setVideos([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -166,23 +161,12 @@ const Index = ({ navigation }) => {
     );
   }
 
-  if (error && videos.length === 0) {
-    return (
-      <View style={styles.center}>
-        <Text style={{ marginBottom: 12, color: colors.primary }}>{error}</Text>
-        <TouchableOpacity onPress={fetchVideos} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Try again</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.screen}>
       {/* HEADER */}
       <View style={styles.headerShadow}>
         <LinearGradient
-          colors={[colors.lightGreen, colors.lightGreen]}
+          colors={['#000000', '#111827']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
@@ -198,7 +182,7 @@ const Index = ({ navigation }) => {
                 style={{
                   height: 22,
                   width: 22,
-                  tintColor: '#000000ff',
+                  tintColor: '#ffffff',
                   transform: [{ rotate: '180deg' }]
                 }}
               />
@@ -238,9 +222,9 @@ const Index = ({ navigation }) => {
           }
           ListEmptyComponent={
             !loading && (
-              <Text style={{ textAlign: 'center', marginTop: 20 }}>
-                No videos found
-              </Text>
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No record found</Text>
+              </View>
             )
           }
           showsVerticalScrollIndicator={false}
@@ -284,30 +268,30 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   headerTitle: {
-    color: '#000203ff',
+    color: '#ffffff',
     fontSize: 20,
     fontWeight: '700',
   },
   headerSubtitle: {
-    color: '#000000ff',
+    color: '#d1d5db',
     fontSize: 11,
     marginTop: 2,
   },
   counterPill: {
-    backgroundColor: 'rgba(15, 23, 42, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
     alignItems: 'center',
   },
   counterNumber: {
-    color: '#191818ff',
+    color: '#ffffff',
     fontSize: 17,
     fontWeight: '700',
     lineHeight: 20,
   },
   counterLabel: {
-    color: '#030a07ff',
+    color: '#e5e7eb',
     fontSize: 11,
   },
 
@@ -386,6 +370,16 @@ const styles = StyleSheet.create({
   emptyContainer: {
     flexGrow: 1,
     justifyContent: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+  },
+  emptyStateText: {
+    color: '#6b7280',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
