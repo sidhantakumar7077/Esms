@@ -102,7 +102,7 @@ const SchoolCodeScreen = () => {
             const form = new FormData();
             form.append('school_code', value);
 
-            const resp = await fetch('https://www.esms.live/erp-school-list.php', {
+            const resp = await fetch('https://www.scriptlab.in/API/erp-school-list.php', {
                 method: 'POST',
                 body: form,
             });
